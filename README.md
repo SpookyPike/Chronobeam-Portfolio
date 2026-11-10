@@ -140,6 +140,11 @@ session commits before the response is sent, so a `2xx` never acknowledges a wri
 
 Prerequisites: Docker, [`uv`](https://docs.astral.sh/uv/), Node.js 22 with Corepack, and `just`.
 
+The development database image is `postgres:18-alpine`. The backup CLI and the `just ci` backup
+proof shell out to the host's `pg_dump`/`pg_restore`, so install client tools at least as new as
+that image's major version; the CLI refuses a mismatched pairing and names the fix
+([docs/backup_restore.md](docs/backup_restore.md)).
+
 ```bash
 just bootstrap     # tool check, database, dependencies, migrations, synthetic dev data
 just dev           # backend on 127.0.0.1:8000, frontend on 127.0.0.1:5173
