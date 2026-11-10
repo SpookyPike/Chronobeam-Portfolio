@@ -63,6 +63,18 @@ jobs:
         with:
           just-version: 1.58.0
 
+      # The compose server is postgres:16-alpine, and the runner image ships a
+      # newer client. A newer pg_dump writes `SET transaction_timeout = 0`,
+      # which a 16 server rejects, so the backup/restore proof fails on a client
+      # the server cannot read. Pin the client to the server major and prove it.
+      - name: PostgreSQL client 16 (match the compose server major)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
+
       - name: Install dependencies from lockfiles
         run: just install
 

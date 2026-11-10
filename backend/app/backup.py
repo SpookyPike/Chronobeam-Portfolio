@@ -177,7 +177,20 @@ def _pg_env(parts: ConnectionParts) -> dict[str, str]:
     return {**os.environ, "PGPASSWORD": parts.password, **parts.security_env}
 
 
-def _run_postgres_tool(args: list[str], parts: ConnectionParts, operation: str) -> None:
+def _run_postgres_tool(
+    args: list[str],
+    parts: ConnectionParts,
+    operation: str,
+    diagnostic_path: Path | None = None,
+) -> None:
+    """Run one PostgreSQL tool, keeping its output out of the error message.
+
+    The message stays data-free on purpose: PostgreSQL stderr can quote COPY row
+    contents or connection secrets. A failure therefore writes the child's
+    stderr to ``diagnostic_path`` (mode 0600, in the operator's own dump
+    directory) and names that file, so a failed restore is diagnosable without
+    the payload ever reaching an exception, a log line or a CI transcript.
+    """
     try:
         completed = subprocess.run(  # noqa: S603 - fixed PostgreSQL executable arguments
             args, env=_pg_env(parts), capture_output=True, text=True
@@ -185,9 +198,18 @@ def _run_postgres_tool(args: list[str], parts: ConnectionParts, operation: str) 
     except FileNotFoundError as exc:
         raise BackupError(f"{operation} failed: PostgreSQL tool is not installed") from exc
     if completed.returncode:
-        # PostgreSQL stderr can quote COPY row contents or connection secrets.
+        location = ""
+        if diagnostic_path is not None:
+            try:
+                descriptor = os.open(diagnostic_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                    handle.write(completed.stderr or "")
+                location = f"; the tool's own output is in {diagnostic_path}"
+            except OSError:  # pragma: no cover - read-only dump directory
+                location = ""
         raise BackupError(
-            f"{operation} failed (exit {completed.returncode}); see the PostgreSQL log for details"
+            f"{operation} failed (exit {completed.returncode}){location}. "
+            "PostgreSQL writes this to the child's stderr, not to a log file."
         )
 
 
@@ -256,22 +278,51 @@ def _major(version: str) -> int:
 
 
 def _require_compatible_client(tool: str, client: str, server: str) -> None:
-    """Enforce the dump direction, without inventing a restore pairing policy.
+    """Enforce the DUMP direction only.
 
     PostgreSQL 16 pg_dump Notes: older servers are supported, but a server
     newer than the client's major version is refused.
     https://www.postgresql.org/docs/16/app-pgdump.html#APP-PGDUMP-NOTES
 
-    Archive-reader and target-server compatibility are separate concerns:
-    output is not guaranteed to load into an older server. Leave these checks
-    to pg_restore and retain source server/dump-client versions in the manifest.
-    A stricter restore pairing remains OPEN-17.
+    The restore direction is a different question, decided from the manifest's
+    recorded dump client rather than from the pg_restore binary: see
+    ``_require_restore_target``.
     """
     client_major, server_major = _major(client), _major(server)
     if tool == "pg_dump" and client_major < server_major:
         raise BackupError(
             f"pg_dump client major {client_major} is older than the server major {server_major}; "
             f"pg_dump cannot dump a newer server. Install pg_dump major >={server_major}."
+        )
+
+
+def _require_restore_target(dump_client: str, server: str) -> None:
+    """Refuse a restore target older than the client that WROTE the dump.
+
+    ``pg_restore`` performs no version comparison of its own, and that is not
+    enough: a dump written by a newer client can carry a setting the older
+    server does not know. PostgreSQL 17's ``pg_dump`` emits
+    ``SET transaction_timeout = 0``, which a 16 server rejects with
+    ``unrecognized configuration parameter``; with ``--exit-on-error`` that
+    aborts the restore and leaves the target partially populated.
+
+    The comparison therefore uses the dump client recorded in the manifest, not
+    the ``pg_restore`` binary: what matters is the major that produced the
+    archive.
+    """
+    if not dump_client:
+        raise BackupError(
+            "the adjacent manifest does not record the dump client version, so the "
+            "restore target cannot be checked against it"
+        )
+    client_major, server_major = _major(dump_client), _major(server)
+    if client_major > server_major:
+        raise BackupError(
+            f"the dump was written by a PostgreSQL {client_major} client, but the restore "
+            f"target is a PostgreSQL {server_major} server; a dump from a newer major can "
+            f"carry settings an older server rejects. Restore into a server major "
+            f">={client_major}, or re-dump with a client whose major matches the target "
+            f"server ({server_major})."
         )
 
 
@@ -371,6 +422,7 @@ def dump_database(database_url: str, output_directory: Path) -> tuple[Path, Path
                     ],
                     parts,
                     "pg_dump",
+                    diagnostic_path=dump_path.with_name(dump_path.name + ".dump.log"),
                 )
                 raw.commit()
             finally:
@@ -458,6 +510,7 @@ def restore_database(dump_path: Path, database_url: str) -> bool:
         server_version = _postgres_version(version_engine)
     finally:
         version_engine.dispose()
+    _require_restore_target(str(manifest.get("pg_client_version") or ""), server_version)
     restore_client = _client_version("pg_restore")
     _require_compatible_client("pg_restore", restore_client, server_version)
 
@@ -482,6 +535,7 @@ def restore_database(dump_path: Path, database_url: str) -> bool:
             ],
             parts,
             "pg_restore",
+            diagnostic_path=dump_path.with_name(dump_path.name + ".restore.log"),
         )
     except BackupError as exc:
         raise BackupError(f"{exc}\n{_restore_disposal_guidance(parts.database)}") from exc

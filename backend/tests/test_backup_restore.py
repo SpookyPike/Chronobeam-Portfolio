@@ -345,7 +345,17 @@ def restored_backup(tmp_path_factory: pytest.TempPathFactory):
             capture_output=True,
             text=True,
         )
-        assert restore.returncode == 0, restore.stderr + restore.stdout
+        if restore.returncode != 0:
+            # The CLI keeps child output out of its message, so the diagnostic
+            # file beside the dump is the only place the cause is recorded. The
+            # fixture's own data is synthetic, so printing it is safe here.
+            diagnostic = dump_path.with_name(dump_path.name + ".restore.log")
+            tail = (
+                diagnostic.read_text(encoding="utf-8", errors="replace")
+                if diagnostic.is_file()
+                else "<no diagnostic file>"
+            )
+            pytest.fail(f"restore failed: {restore.stderr}{tail}")
         yield source_url, target_url, dump_path, manifest_path, env
     finally:
         if source_engine is not None:
@@ -503,7 +513,9 @@ def test_the_manifest_counts_come_from_the_dump_snapshot(
 
         real = backup._run_postgres_tool
 
-        def with_concurrent_write(args, parts, operation):  # type: ignore[no-untyped-def]
+        def with_concurrent_write(  # type: ignore[no-untyped-def]
+            args, parts, operation, **kwargs
+        ):
             if operation == "pg_dump":
                 # A DIFFERENT connection, committed: exactly the write the
                 # snapshot must exclude.
@@ -519,7 +531,7 @@ def test_the_manifest_counts_come_from_the_dump_snapshot(
                         )
                 finally:
                     writer.dispose()
-            real(args, parts, operation)
+            real(args, parts, operation, **kwargs)
 
         monkeypatch.setattr(backup, "_run_postgres_tool", with_concurrent_write)
 
@@ -563,9 +575,36 @@ def test_supported_dump_version_pairings(client: str, server: str) -> None:
 @pytest.mark.parametrize(
     "client,server", [("15.9", "16.15"), ("16.4", "16.15"), ("17.1", "16.15"), ("16.4", "17.1")]
 )
-def test_restore_versions_do_not_invent_an_institutional_gate(client: str, server: str) -> None:
-    """Archive/target compatibility is checked by pg_restore, not the dump rule."""
+def test_the_dump_rule_does_not_gate_pg_restore(client: str, server: str) -> None:
+    """The pg_restore binary's own major is not the pairing input."""
     backup._require_compatible_client("pg_restore", client, server)
+
+
+def test_a_dump_from_a_newer_client_is_refused_by_an_older_target() -> None:
+    """A PostgreSQL 17 dump carries SET transaction_timeout, which 16 rejects.
+
+    This is the exact failure that broke CI: the runner's client was a newer
+    major than the compose server, pg_restore performed no comparison of its
+    own, and --exit-on-error left the target partially populated.
+    """
+    server = "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0)"
+    with pytest.raises(backup.BackupError, match="written by a PostgreSQL 17 client") as raised:
+        backup._require_restore_target("17.11", server)
+    message = str(raised.value)
+    assert "PostgreSQL 16 server" in message
+    assert "re-dump with a client whose major matches the target server (16)" in message
+
+
+@pytest.mark.parametrize(
+    "dump_client,server", [("16.4", "16.15"), ("15.9", "16.15"), ("16.4", "17.1"), ("17.1", "17.4")]
+)
+def test_a_dump_from_the_same_or_older_client_is_accepted(dump_client: str, server: str) -> None:
+    backup._require_restore_target(dump_client, server)
+
+
+def test_a_manifest_without_a_dump_client_version_is_refused() -> None:
+    with pytest.raises(backup.BackupError, match="does not record the dump client version"):
+        backup._require_restore_target("", "PostgreSQL 16.15")
 
 
 @pytest.mark.parametrize("tool", ["pg_dump", "pg_restore"])
@@ -743,7 +782,9 @@ def test_backup_tool_failures_withhold_child_stderr(monkeypatch, tool) -> None:
     with pytest.raises(backup.BackupError) as raised:
         backup._run_postgres_tool([tool], parts, tool)
     assert sentinel not in str(raised.value)
-    assert str(raised.value) == f"{tool} failed (exit 1); see the PostgreSQL log for details"
+    message = str(raised.value)
+    assert message.startswith(f"{tool} failed (exit 1)")
+    assert "PostgreSQL writes this to the child's stderr, not to a log file." in message
 
 
 @pytest.mark.parametrize("tool", ["pg_dump", "pg_restore"])
@@ -794,7 +835,14 @@ def test_backup_cli_restore_failure_withholds_row_payload_and_keeps_disposal_gui
     dump_path = tmp_path / "probe.dump"
     dump_path.write_bytes(b"synthetic archive")
     dump_path.with_suffix(".manifest.json").write_text(
-        json.dumps({"table_counts": {}, "dump_sha256": backup._sha256(dump_path)}), encoding="utf-8"
+        json.dumps(
+            {
+                "table_counts": {},
+                "dump_sha256": backup._sha256(dump_path),
+                "pg_client_version": "16.4",
+            }
+        ),
+        encoding="utf-8",
     )
     monkeypatch.setattr(backup, "_empty_database_or_raise", lambda _url: None)
     monkeypatch.setattr(backup, "_postgres_version", lambda _engine: "16.15")
@@ -817,7 +865,7 @@ def test_backup_cli_restore_failure_withholds_row_payload_and_keeps_disposal_gui
     assert captured and "--exit-on-error" in captured[0]
     assert sentinel not in output.out + output.err
     assert "synthetic-password" not in output.out + output.err
-    assert "pg_restore failed (exit 1); see the PostgreSQL log for details" in output.err
+    assert "pg_restore failed (exit 1)" in output.err
     assert "PARTIALLY POPULATED" in output.err
     assert "fresh empty database" in output.err
 
@@ -829,7 +877,14 @@ def test_backup_cli_verification_failure_withholds_child_output_and_keeps_dispos
     dump_path = tmp_path / "probe.dump"
     dump_path.write_bytes(b"synthetic archive")
     dump_path.with_suffix(".manifest.json").write_text(
-        json.dumps({"table_counts": {}, "dump_sha256": backup._sha256(dump_path)}), encoding="utf-8"
+        json.dumps(
+            {
+                "table_counts": {},
+                "dump_sha256": backup._sha256(dump_path),
+                "pg_client_version": "16.4",
+            }
+        ),
+        encoding="utf-8",
     )
     monkeypatch.setattr(backup, "_empty_database_or_raise", lambda _url: None)
     monkeypatch.setattr(backup, "_postgres_version", lambda _engine: "16.15")
@@ -874,17 +929,23 @@ def test_a_failed_restore_names_the_disposal_step(
     dump_path.write_bytes(b"not a real dump")
     manifest_path = dump_path.with_suffix(".manifest.json")
     manifest_path.write_text(
-        json.dumps({"table_counts": {}, "dump_sha256": backup._sha256(dump_path)}),
+        json.dumps(
+            {
+                "table_counts": {},
+                "dump_sha256": backup._sha256(dump_path),
+                "pg_client_version": "16.4",
+            }
+        ),
         encoding="utf-8",
     )
 
     captured: list[list[str]] = []
 
-    def failing(args, parts, operation):  # type: ignore[no-untyped-def]
+    def failing(args, parts, operation, **kwargs):  # type: ignore[no-untyped-def]
         captured.append(list(args))
         if operation == "pg_restore":
             raise backup.BackupError("pg_restore failed (exit 1): simulated")
-        real_run_postgres_tool(args, parts, operation)
+        real_run_postgres_tool(args, parts, operation, **kwargs)
 
     real_run_postgres_tool = backup._run_postgres_tool
     monkeypatch.setattr(backup, "_run_postgres_tool", failing)

@@ -79,16 +79,26 @@ inside the maintenance window. It is a deliberate trade, not an
 oversight — if a dump ever grows large enough for vacuum starvation to matter,
 the fix is a separate snapshot-holder design, not reverting to post-dump counts.
 
-**Client/server pairing.** `pg_dump` is refused when the source server's major
-version is **newer** than the client's. Same-major and newer-client dumps of
-older servers are accepted, as documented in [PostgreSQL 16's pg_dump
-Notes](https://www.postgresql.org/docs/16/app-pgdump.html#APP-PGDUMP-NOTES).
-Source server and dump-client versions remain recorded in the manifest.
-Archive-reader and restore-target compatibility are separate: `pg_restore`
-performs its native checks, with no shared dump-direction comparison. Loading
-output into an older server is not guaranteed. Use matched client tools and a
-tested target pairing; a stricter gate, RPO, RTO and retention remain
-deployment-owner decisions.
+**Client/server pairing, both directions.** The rule has two halves and both
+are enforced before a tool runs:
+
+| Direction | Rule | Why |
+|---|---|---|
+| Dump | `pg_dump` major >= source server major | `pg_dump` cannot read a newer server ([PostgreSQL 16 pg_dump Notes](https://www.postgresql.org/docs/16/app-pgdump.html#APP-PGDUMP-NOTES)). |
+| Restore | dump client major <= target server major | A dump written by a newer client can carry a setting the older server rejects. |
+
+The restore half is not hypothetical. PostgreSQL 17's `pg_dump` emits
+`SET transaction_timeout = 0`, which a 16 server rejects with
+`unrecognized configuration parameter`; with `--exit-on-error` that aborts the
+restore and leaves the target partially populated. `pg_restore` itself performs
+no version comparison, so the check uses the dump client recorded in the
+manifest, not the `pg_restore` binary.
+
+Practical consequence: **the host's client tools must match the database
+server's major version.** A host with a newer client than the server can dump
+but not restore, and the CLI says so before touching the target. Source server
+and dump-client versions are recorded in the manifest. RPO, RTO and retention
+remain deployment-owner decisions.
 
 **A failed restore is not retried in place.** `pg_restore` runs with
 `--exit-on-error`, so a partial restore cannot be recorded as a good one. If
@@ -96,18 +106,22 @@ either `pg_restore` or post-restore verification fails, the target is left
 unusable **by design** and the CLI names the disposal step (see
 `docs/operations.md`); it does not attempt an in-place production restore.
 
-Child failures report only the tool and exit status, for example
-`pg_restore failed (exit 1); see the PostgreSQL log for details`. Arbitrary child
-stdout/stderr is withheld because it can contain row payloads or connection
-secrets. Consult restricted PostgreSQL logs through the approved operational
-process; the CLI still adds the partial-target disposal guidance.
+Child failures report the tool and its exit status, never the child's output:
+`pg_restore failed (exit 1); the tool's own output is in
+<dump>.restore.log. PostgreSQL writes this to the child's stderr, not to a log
+file.` The message stays data-free because PostgreSQL stderr can quote COPY row
+contents or connection secrets. The stderr is not discarded: it is written to a
+`0600` file beside the dump (`<dump>.dump.log` or `<dump>.restore.log`), inside
+the operator's own dump directory, so a failed restore is diagnosable without
+the payload reaching an exception, an application log line or a CI transcript.
+Read that file, then follow the disposal guidance; do not retry in place.
 
 ## Operator checklist
 
 | Concern | Decision / location |
 |---|---|
 | PostgreSQL client tools | On the **host** that runs the CLI. The serving image deliberately contains no client tools. |
-| Version pairing | Dump client major ≥ source server major; archive/target checks belong to `pg_restore`. Source/dump-client versions are recorded. |
+| Version pairing | Dump client major ≥ source server major; dump client major ≤ target server major. Use client tools that match the server's major. Source/dump-client versions are recorded in the manifest. |
 | Credentials | Dump uses `CHRONOBEAM_DATABASE_URL`; restore/verify use `--database-url-env NAME`. Prefer environment over the retained argv forms; never commit secrets. |
 | Network path | The approved protected channel to the database host. |
 | Destination | An approved, access-controlled backup directory; the dump is personal-data storage even though its manifest is aggregate-only. |
