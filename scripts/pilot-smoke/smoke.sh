@@ -101,7 +101,7 @@ wait_for() {
 
 for command in docker openssl curl python3 uv; do require_command "$command"; done
 [[ -x "$ROOT/backend/.venv/bin/python" ]] || fail "backend virtual environment is required"
-docker pull postgres:16-alpine >/dev/null || fail "could not pull postgres:16-alpine"
+docker pull postgres:18-alpine >/dev/null || fail "could not pull postgres:18-alpine"
 if docker container inspect "$DB_CONTAINER" >/dev/null 2>&1 || docker container inspect "$APP_CONTAINER" >/dev/null 2>&1; then
     fail "a pilot-smoke container already exists; refuse to disturb another run"
 fi
@@ -136,7 +136,7 @@ curl --silent --show-error --fail --cacert "$SCRATCH/ca.pem" "$ISSUER/health" >/
     || fail "fake IdP TLS health failed"
 
 docker run -d --name "$DB_CONTAINER" -e "POSTGRES_USER=$DB_USER" -e "POSTGRES_PASSWORD=$DB_PASSWORD" \
-    -e "POSTGRES_DB=$DB_NAME" -p "127.0.0.1:${DB_PORT}:5432" postgres:16-alpine >/dev/null
+    -e "POSTGRES_DB=$DB_NAME" -p "127.0.0.1:${DB_PORT}:5432" postgres:18-alpine >/dev/null
 for _ in $(seq 1 40); do
     if docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then break; fi
     sleep 1

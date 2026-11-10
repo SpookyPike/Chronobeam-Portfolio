@@ -43,7 +43,7 @@ URLs whose query parsers disagree are also refused; percent-encode reserved
 characters in credentials and option values, for example `%23` for `#`.
 `sslpassword` is explicitly unsupported: [libpq has no environment variable for
 it](https://www.postgresql.org/docs/16/libpq-connect.html#LIBPQ-CONNECT-SSLPASSWORD).
-The mappings follow [PostgreSQL 16's libpq environment
+The mappings follow [libpq's environment
 documentation](https://www.postgresql.org/docs/16/libpq-envars.html).
 
 `restore` rejects a target that already has tables. The manifest records dump
@@ -84,7 +84,7 @@ are enforced before a tool runs:
 
 | Direction | Rule | Why |
 |---|---|---|
-| Dump | `pg_dump` major >= source server major | `pg_dump` cannot read a newer server ([PostgreSQL 16 pg_dump Notes](https://www.postgresql.org/docs/16/app-pgdump.html#APP-PGDUMP-NOTES)). |
+| Dump | `pg_dump` major >= source server major | `pg_dump` cannot read a newer server ([pg_dump Notes](https://www.postgresql.org/docs/current/app-pgdump.html#APP-PGDUMP-NOTES)). |
 | Restore | dump client major <= target server major | A dump written by a newer client can carry a setting the older server rejects. |
 
 The restore half is not hypothetical. PostgreSQL 17's `pg_dump` emits
