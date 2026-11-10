@@ -71,23 +71,6 @@ table above.
 - Foreign working-time law is not modelled. `TRAVEL-LOCAL-001` states that boundary explicitly
   rather than applying German thresholds abroad.
 
-## Dependency advisories
-
-Four frontend packages in the pinned lockfile carry a published advisory with a fix available:
-`seroval` 1.6.7 (runtime, through the router), `undici` 8.10.2 (test-only, through jsdom),
-`vite` 8.2.2 and `zod` 4.6.5 (development tooling). None is reachable from a production request
-path in this build: the image ships the compiled SPA, and `undici`, `vite` and `zod` are not in it.
-
-An in-range upgrade to the fixed versions was attempted and reverted. It re-resolved more than 600
-lockfile entries and changed the behaviour of three disclosure tests, so taking it without a
-separate review would have traded a known, scoped advisory for an unverified graph. The fixed
-versions are `seroval` 1.6.8, `undici` 8.12.2, `vite` 8.2.4 and `zod` 4.6.6; a deployment that
-needs them cleared should bump them deliberately and re-run `pnpm test` and `pnpm build`.
-
-```bash
-cd frontend && pnpm audit            # current advisory state
-```
-
 ## Not legal advice
 
 The rule catalogue maps implemented behaviour to public statutes and to labelled sample policy.

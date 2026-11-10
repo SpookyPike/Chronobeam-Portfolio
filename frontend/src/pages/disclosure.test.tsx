@@ -17,6 +17,26 @@ function renderPage(page: ReactNode) {
   return render(<QueryClientProvider client={new QueryClient()}>{page}</QueryClientProvider>);
 }
 
+/** Wait until the OCD picker offers `value`, then select it.
+ *
+ *  The assignments arrive from their own query, so ``findAllByLabelText`` only
+ *  proves the <select> exists. Selecting before the options land fails with
+ *  "Value ... not found in options", which is a test-timing assumption rather
+ *  than a product defect.
+ */
+async function selectOcdAssignment(
+  user: ReturnType<typeof userEvent.setup>,
+  value: string,
+): Promise<void> {
+  const assignmentChoices = await screen.findAllByLabelText("Assignment");
+  const ocdSelect = assignmentChoices[1] as HTMLSelectElement;
+  await waitFor(() => {
+    const values = Array.from(ocdSelect.options).map((option) => option.value);
+    expect(values).toContain(value);
+  });
+  await user.selectOptions(ocdSelect, value);
+}
+
 let fetchMock: ReturnType<typeof vi.fn>;
 let identity: { subject: string; display_name: string; capabilities: string[] };
 let recipientsResponse: unknown;
@@ -202,8 +222,7 @@ describe("Disclosure UI", () => {
   it("submits OCD with the preview fingerprint and prompts re-preview on 409", async () => {
     const user = userEvent.setup();
     renderPage(<SubmissionsPage month="2026-07" />);
-    const assignmentChoices = await screen.findAllByLabelText("Assignment");
-    await user.selectOptions(assignmentChoices[1], "ocd-1");
+    await selectOcdAssignment(user, "ocd-1");
     await user.click(
       screen.getByRole("button", { name: "Preview exact package — OCD compensation" }),
     );
@@ -240,14 +259,13 @@ describe("Disclosure UI", () => {
       release = resolve;
     });
     renderPage(<SubmissionsPage month="2026-07" />);
-    const assignmentChoices = await screen.findAllByLabelText("Assignment");
-    await user.selectOptions(assignmentChoices[1], "ocd-1");
+    await selectOcdAssignment(user, "ocd-1");
     await user.click(
       screen.getByRole("button", { name: "Preview exact package — OCD compensation" }),
     );
 
     // The employee moves to another assignment before the answer arrives.
-    await user.selectOptions(assignmentChoices[1], "ocd-2");
+    await selectOcdAssignment(user, "ocd-2");
     release(
       new Response(
         JSON.stringify({
@@ -293,8 +311,7 @@ describe("Disclosure UI", () => {
     );
     const boxes = screen.getAllByRole("checkbox", { name: "demo-recipient" }); // one picker per card
     boxes.forEach((box) => expect(box).not.toBeChecked());
-    const assignmentChoices = await screen.findAllByLabelText("Assignment");
-    await user.selectOptions(assignmentChoices[1], "ocd-1");
+    await selectOcdAssignment(user, "ocd-1");
     await user.click(
       screen.getByRole("button", { name: "Preview exact package — OCD compensation" }),
     );
@@ -525,8 +542,7 @@ describe("Disclosure UI", () => {
   it("states the recipient requirement at the submit instead of leaving it inert", async () => {
     const user = userEvent.setup();
     renderPage(<SubmissionsPage month="2026-07" />);
-    const assignmentChoices = await screen.findAllByLabelText("Assignment");
-    await user.selectOptions(assignmentChoices[1], "ocd-1");
+    await selectOcdAssignment(user, "ocd-1");
     await user.click(
       screen.getByRole("button", { name: "Preview exact package — OCD compensation" }),
     );
