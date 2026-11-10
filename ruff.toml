@@ -1,0 +1,34 @@
+# Ruff — canonical lint + format tool for the WHOLE repository.
+#
+# One config, discovered by every Python file in the tree. It lives at the root
+# so that `backend/` and `scripts/` are formatted by the same rules; a copy
+# inside `backend/pyproject.toml` left `scripts/` on ruff's defaults
+# (line-length 88, default rule set), so the two disagreed.
+#
+# Strict-but-not-noisy: core correctness (E/F/W), import sorting (I),
+# pyupgrade (UP), bugbears (B), simplify (SIM), async (ASYNC), security (S),
+# ruff-specific (RUF). Style-noise categories (e.g. full pydocstyle) are off.
+
+target-version = "py312"
+line-length = 100
+
+# Paths are relative to THIS file, so they carry the repository root.
+src = ["backend/app", "backend/tests"]
+
+# Documentation is excluded from code linting; the lint gate targets source
+# files. `.venv`, `node_modules` and `dist` are ruff defaults already.
+exclude = ["docs"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "S", "RUF"]
+
+[lint.per-file-ignores]
+# asserts are the sanctioned test idiom here
+"backend/tests/**" = ["S101"]
+# Developer CLIs only; the argv is a fixed constant list, never
+# caller-supplied input.
+"backend/app/db_admin.py" = ["S603", "S607"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

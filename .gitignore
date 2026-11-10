@@ -1,0 +1,40 @@
+# ------------------------------------------------------------------
+# Chronobeam — ignore rules
+# ------------------------------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.hypothesis/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Local demo run state (pidfiles + logs written by scripts/demo/demo.sh)
+.demo/
+
+# Environment / secrets (never commit)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+*.Zone.Identifier
+.playwright-mcp/
+# Generated policy snapshot (produced by scripts/policy_snapshot.py)
+docs/POLICY_SNAPSHOT.json

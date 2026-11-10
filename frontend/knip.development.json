@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "e2e/**/*.spec.ts",
+    "demo/playwright.demo.config.ts",
+    "demo/playwright.video.config.ts"
+  ],
+  "ignoreDependencies": ["@swc/core"]
+}

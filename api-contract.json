@@ -1,0 +1,2296 @@
+{
+  "AdminSystemOut": {
+    "properties": {
+      "application": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "auth": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "calendar": {
+        "$ref": {
+          "properties": {
+            "editions": {
+              "items": {
+                "$ref": {
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "valid_from": {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    "valid_to": {
+                      "anyOf": [
+                        {
+                          "format": "date",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "valid_from",
+                    "valid_to",
+                    "source"
+                  ],
+                  "type": "object"
+                }
+              },
+              "type": "array"
+            },
+            "first_uncovered_month": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "editions",
+            "first_uncovered_month"
+          ],
+          "type": "object"
+        }
+      },
+      "database": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "integrations": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      }
+    },
+    "required": [
+      "application",
+      "database",
+      "auth",
+      "integrations",
+      "calendar"
+    ],
+    "type": "object"
+  },
+  "AdminUserDetail": {
+    "properties": {
+      "active": {
+        "type": "boolean"
+      },
+      "created_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "effective_capabilities": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "email": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "external_employee_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "has_effective_contract": {
+        "type": "boolean"
+      },
+      "has_effective_schedule": {
+        "type": "boolean"
+      },
+      "has_idp_subject": {
+        "type": "boolean"
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "idp_subject": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "legal_name": {
+        "type": "string"
+      },
+      "role_assignments": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "granted_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "granted_by_principal": {
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "revoked_at": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "role": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "role",
+              "granted_by_principal",
+              "granted_at",
+              "revoked_at"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "roles": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "id",
+      "external_employee_id",
+      "legal_name",
+      "email",
+      "active",
+      "roles",
+      "created_at",
+      "has_idp_subject",
+      "has_effective_contract",
+      "has_effective_schedule",
+      "idp_subject",
+      "role_assignments",
+      "effective_capabilities"
+    ],
+    "type": "object"
+  },
+  "AdminUserSummary": {
+    "properties": {
+      "active": {
+        "type": "boolean"
+      },
+      "created_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "email": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "external_employee_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "has_effective_contract": {
+        "type": "boolean"
+      },
+      "has_effective_schedule": {
+        "type": "boolean"
+      },
+      "has_idp_subject": {
+        "type": "boolean"
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "legal_name": {
+        "type": "string"
+      },
+      "roles": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "id",
+      "external_employee_id",
+      "legal_name",
+      "email",
+      "active",
+      "roles",
+      "created_at",
+      "has_idp_subject",
+      "has_effective_contract",
+      "has_effective_schedule"
+    ],
+    "type": "object"
+  },
+  "DayDetail": {
+    "properties": {
+      "breaks": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "client_request_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "elapsed_seconds": {
+                "type": "integer"
+              },
+              "end_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "end_local": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": {
+                  "enum": [
+                    "UNPAID",
+                    "PAID_SHIFT_BREAK",
+                    "OTHER"
+                  ],
+                  "type": "string"
+                }
+              },
+              "linked_shift_assignment_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "start_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "start_local": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "supersedes_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "version": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "start_at",
+              "end_at",
+              "start_local",
+              "end_local",
+              "elapsed_seconds",
+              "linked_shift_assignment_id",
+              "version",
+              "supersedes_id",
+              "client_request_id"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "date": {
+        "format": "date",
+        "type": "string"
+      },
+      "intervals": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "client_request_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "comment": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "elapsed_seconds": {
+                "type": "integer"
+              },
+              "end_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "end_local": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "source": {
+                "$ref": {
+                  "enum": [
+                    "EMPLOYEE",
+                    "IMPORT"
+                  ],
+                  "type": "string"
+                }
+              },
+              "start_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "start_local": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "supersedes_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "version": {
+                "type": "integer"
+              },
+              "work_type": {
+                "$ref": {
+                  "enum": [
+                    "ON_SITE",
+                    "REMOTE",
+                    "SHIFT",
+                    "OCD_CALL",
+                    "OVERTIME_PAID",
+                    "OVERTIME_TIME_COMP",
+                    "BUSINESS_TRIP_WORK"
+                  ],
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "work_type",
+              "start_at",
+              "end_at",
+              "start_local",
+              "end_local",
+              "elapsed_seconds",
+              "comment",
+              "source",
+              "version",
+              "supersedes_id",
+              "client_request_id"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "date",
+      "intervals"
+    ],
+    "type": "object"
+  },
+  "DayStatusMonthOut": {
+    "properties": {
+      "compensation_metrics": {
+        "$ref": {
+          "properties": {
+            "counting_note": {
+              "type": "string"
+            },
+            "flex_compensation_full_days": {
+              "type": "integer"
+            },
+            "flex_compensation_half_days": {
+              "type": "integer"
+            },
+            "flex_compensation_longest_run_days": {
+              "type": "integer"
+            },
+            "flex_compensation_zero_requirement_days": {
+              "type": "integer"
+            },
+            "limits": {
+              "$ref": {
+                "properties": {
+                  "enforced": {
+                    "type": "boolean"
+                  },
+                  "max_consecutive_days": {
+                    "type": "integer"
+                  },
+                  "max_days_per_year": {
+                    "type": "integer"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "max_days_per_year",
+                  "max_consecutive_days",
+                  "source",
+                  "enforced"
+                ],
+                "type": "object"
+              }
+            },
+            "shift_compensation_days": {
+              "type": "integer"
+            },
+            "year": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "year",
+            "flex_compensation_full_days",
+            "flex_compensation_half_days",
+            "flex_compensation_zero_requirement_days",
+            "flex_compensation_longest_run_days",
+            "shift_compensation_days",
+            "limits",
+            "counting_note"
+          ],
+          "type": "object"
+        }
+      },
+      "entries": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "category": {
+                "$ref": {
+                  "enum": [
+                    "VACATION",
+                    "SICK",
+                    "FLEX_COMPENSATION",
+                    "SHIFT_COMPENSATION"
+                  ],
+                  "type": "string"
+                }
+              },
+              "created_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "day": {
+                "format": "date",
+                "type": "string"
+              },
+              "day_part": {
+                "$ref": {
+                  "enum": [
+                    "ALL",
+                    "MORNING",
+                    "AFTERNOON"
+                  ],
+                  "type": "string"
+                }
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "portion": {
+                "$ref": {
+                  "enum": [
+                    "FULL",
+                    "HALF"
+                  ],
+                  "type": "string"
+                }
+              },
+              "supersedes_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "version": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "day",
+              "category",
+              "portion",
+              "day_part",
+              "version",
+              "supersedes_id",
+              "created_at"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "period": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "period",
+      "entries",
+      "compensation_metrics"
+    ],
+    "type": "object"
+  },
+  "DayStatusOut": {
+    "properties": {
+      "category": {
+        "$ref": {
+          "enum": [
+            "VACATION",
+            "SICK",
+            "FLEX_COMPENSATION",
+            "SHIFT_COMPENSATION"
+          ],
+          "type": "string"
+        }
+      },
+      "created_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "day": {
+        "format": "date",
+        "type": "string"
+      },
+      "day_part": {
+        "$ref": {
+          "enum": [
+            "ALL",
+            "MORNING",
+            "AFTERNOON"
+          ],
+          "type": "string"
+        }
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "portion": {
+        "$ref": {
+          "enum": [
+            "FULL",
+            "HALF"
+          ],
+          "type": "string"
+        }
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "version": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "day",
+      "category",
+      "portion",
+      "day_part",
+      "version",
+      "supersedes_id",
+      "created_at"
+    ],
+    "type": "object"
+  },
+  "DisclosureGrantOut": {
+    "properties": {
+      "access_request_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "employee_identifier": {
+        "type": "string"
+      },
+      "expires_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "granted_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "grantee_principal": {
+        "type": "string"
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "period_end": {
+        "format": "date",
+        "type": "string"
+      },
+      "period_start": {
+        "format": "date",
+        "type": "string"
+      },
+      "purpose": {
+        "$ref": {
+          "enum": [
+            "SHIFT_REPORT",
+            "OVERTIME_PAID",
+            "OVERTIME_TIME_COMP",
+            "OCD_COMPENSATION",
+            "WORK_TIME_RECORD",
+            "RANDOM_CHECK"
+          ],
+          "type": "string"
+        }
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "view_type": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "access_request_id",
+      "employee_identifier",
+      "grantee_principal",
+      "purpose",
+      "period_start",
+      "period_end",
+      "view_type",
+      "granted_at",
+      "expires_at",
+      "supersedes_id",
+      "active"
+    ],
+    "type": "object"
+  },
+  "MonthSummary": {
+    "properties": {
+      "closing_balance_minutes": {
+        "type": "integer"
+      },
+      "daily_results": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "account_credit_minutes": {
+                "type": "integer"
+              },
+              "calendar_class": {
+                "$ref": {
+                  "enum": [
+                    "WEEKDAY",
+                    "PUBLIC_HOLIDAY",
+                    "EMPLOYER_FREE"
+                  ],
+                  "type": "string"
+                }
+              },
+              "date": {
+                "format": "date",
+                "type": "string"
+              },
+              "delta_minutes": {
+                "type": "integer"
+              },
+              "required_minutes": {
+                "type": "integer"
+              },
+              "travel_topup_minutes": {
+                "type": "integer"
+              },
+              "worked_minutes": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "date",
+              "worked_minutes",
+              "required_minutes",
+              "delta_minutes",
+              "calendar_class",
+              "account_credit_minutes"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "days": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "date": {
+                "format": "date",
+                "type": "string"
+              },
+              "interval_count": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "date",
+              "interval_count"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "interval_count": {
+        "type": "integer"
+      },
+      "period_month": {
+        "format": "date",
+        "type": "string"
+      },
+      "status": {
+        "$ref": {
+          "enum": [
+            "OPEN",
+            "REVIEWED",
+            "CLOSED"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "period_month",
+      "status",
+      "interval_count",
+      "days",
+      "daily_results",
+      "closing_balance_minutes"
+    ],
+    "type": "object"
+  },
+  "OcdCompensationPreviewOut": {
+    "properties": {
+      "assignment_end_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "assignment_start_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "calls": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "call_end_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "call_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "call_start_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "elapsed_seconds": {
+                "type": "integer"
+              },
+              "mode": {
+                "$ref": {
+                  "enum": [
+                    "REMOTE",
+                    "ON_SITE"
+                  ],
+                  "type": "string"
+                }
+              },
+              "span_end_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "span_start_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "travel_back_minutes": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "travel_out_minutes": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "call_id",
+              "mode",
+              "call_start_at",
+              "call_end_at",
+              "travel_out_minutes",
+              "travel_back_minutes",
+              "span_start_at",
+              "span_end_at",
+              "elapsed_seconds"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "classified_components": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "minutes": {
+                "type": "integer"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "time_equivalent_minutes": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "rule_id",
+              "component",
+              "minutes"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "duty": {
+        "$ref": {
+          "properties": {
+            "basis_points": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "duty_kind": {
+              "enum": [
+                "DUTY_GE_12H",
+                "DUTY_LT_12H"
+              ],
+              "type": "string"
+            },
+            "duty_minutes": {
+              "type": "integer"
+            },
+            "short_notice": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "duty_minutes",
+            "duty_kind",
+            "units",
+            "basis_points",
+            "short_notice"
+          ],
+          "type": "object"
+        }
+      },
+      "election": {
+        "$ref": {
+          "properties": {
+            "id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mode": {
+              "anyOf": [
+                {
+                  "$ref": {
+                    "enum": [
+                      "PAY",
+                      "TIME"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "mode",
+            "version"
+          ],
+          "type": "object"
+        }
+      },
+      "employee_identifier": {
+        "type": "string"
+      },
+      "findings": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "INFO",
+                  "WARNING",
+                  "CRITICAL",
+                  "BLOCKED_POLICY"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "status",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "ocd_assignment_id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "plan_source": {
+        "type": "string"
+      },
+      "policy_status": {
+        "enum": [
+          "CONFIRMED",
+          "PROVISIONAL",
+          "BLOCKED"
+        ],
+        "type": "string"
+      },
+      "policy_version": {
+        "type": "string"
+      },
+      "preview_fingerprint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "report_type": {
+        "const": "OCD_COMPENSATION",
+        "type": "string"
+      },
+      "reported_notice_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "policy_version",
+      "policy_status",
+      "employee_identifier",
+      "ocd_assignment_id",
+      "assignment_start_at",
+      "assignment_end_at",
+      "calls",
+      "classified_components",
+      "duty",
+      "election",
+      "plan_source",
+      "reported_notice_at",
+      "findings"
+    ],
+    "type": "object"
+  },
+  "OnboardingStateOut": {
+    "properties": {
+      "blocked_month": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "blocked_reason": {
+        "anyOf": [
+          {
+            "$ref": {
+              "enum": [
+                "POLICY_EDITION_MISSING",
+                "CALENDAR_MISSING",
+                "ROLLOUT_BOUNDARY"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "correctable": {
+        "type": "boolean"
+      },
+      "default_start_month": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "has_facts_in_month": {
+        "type": "boolean"
+      },
+      "in_use_reason": {
+        "anyOf": [
+          {
+            "$ref": {
+              "enum": [
+                "IN_USE_BY_FACTS",
+                "IN_USE_BY_REVIEW",
+                "IN_USE_BY_DISCLOSURE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "month": {
+        "type": "string"
+      },
+      "opening": {
+        "anyOf": [
+          {
+            "$ref": {
+              "properties": {
+                "confirmed_by": {
+                  "type": "string"
+                },
+                "corrected_at": {
+                  "anyOf": [
+                    {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cutover_month": {
+                  "type": "string"
+                },
+                "minutes": {
+                  "type": "integer"
+                },
+                "occurred_on": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "previous_period": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer"
+                },
+                "seed_minutes": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "cutover_month",
+                "minutes",
+                "seed_minutes",
+                "occurred_on",
+                "previous_period",
+                "confirmed_by",
+                "revision",
+                "corrected_at"
+              ],
+              "type": "object"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "schedule": {
+        "anyOf": [
+          {
+            "$ref": {
+              "properties": {
+                "fri_required_minutes": {
+                  "type": "integer"
+                },
+                "fri_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fri_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mon_required_minutes": {
+                  "type": "integer"
+                },
+                "mon_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mon_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sat_required_minutes": {
+                  "type": "integer"
+                },
+                "sat_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sat_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source": {
+                  "$ref": {
+                    "enum": [
+                      "MASTER",
+                      "ADMIN_SEED",
+                      "EMPLOYEE"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "sun_required_minutes": {
+                  "type": "integer"
+                },
+                "sun_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sun_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "thu_required_minutes": {
+                  "type": "integer"
+                },
+                "thu_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "thu_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tue_required_minutes": {
+                  "type": "integer"
+                },
+                "tue_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tue_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "valid_from": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "valid_to": {
+                  "anyOf": [
+                    {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "version": {
+                  "type": "integer"
+                },
+                "wed_required_minutes": {
+                  "type": "integer"
+                },
+                "wed_typical_end": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "wed_typical_start": {
+                  "anyOf": [
+                    {
+                      "format": "time",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "weekly_required_minutes": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "valid_from",
+                "valid_to",
+                "weekly_required_minutes",
+                "mon_required_minutes",
+                "tue_required_minutes",
+                "wed_required_minutes",
+                "thu_required_minutes",
+                "fri_required_minutes",
+                "sat_required_minutes",
+                "sun_required_minutes",
+                "mon_typical_start",
+                "mon_typical_end",
+                "tue_typical_start",
+                "tue_typical_end",
+                "wed_typical_start",
+                "wed_typical_end",
+                "thu_typical_start",
+                "thu_typical_end",
+                "fri_typical_start",
+                "fri_typical_end",
+                "sat_typical_start",
+                "sat_typical_end",
+                "sun_typical_start",
+                "sun_typical_end",
+                "source",
+                "version"
+              ],
+              "type": "object"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "state": {
+        "$ref": {
+          "enum": [
+            "READY",
+            "BLOCKED",
+            "COMPLETED"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "state",
+      "month",
+      "default_start_month",
+      "opening",
+      "blocked_reason",
+      "blocked_month",
+      "has_facts_in_month",
+      "correctable",
+      "in_use_reason",
+      "schedule"
+    ],
+    "type": "object"
+  },
+  "OvertimePreviewOut": {
+    "properties": {
+      "authorizations": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "purpose": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source_ref": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "$ref": {
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "CANCELLED"
+                  ],
+                  "type": "string"
+                }
+              },
+              "valid_from": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "valid_to": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "valid_from",
+              "valid_to",
+              "purpose",
+              "status",
+              "source_ref"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "classified_components": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "minutes": {
+                "type": "integer"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "time_equivalent_minutes": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "rule_id",
+              "component",
+              "minutes"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "election": {
+        "$ref": {
+          "properties": {
+            "id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mode": {
+              "anyOf": [
+                {
+                  "$ref": {
+                    "enum": [
+                      "PAY",
+                      "TIME"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "mode",
+            "version"
+          ],
+          "type": "object"
+        }
+      },
+      "employee_identifier": {
+        "type": "string"
+      },
+      "findings": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "INFO",
+                  "WARNING",
+                  "CRITICAL",
+                  "BLOCKED_POLICY"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "status",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "overtime_intervals": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "elapsed_seconds": {
+                "type": "integer"
+              },
+              "end_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "interval_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "linked_authorization_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "start_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "version": {
+                "type": "integer"
+              },
+              "work_type": {
+                "$ref": {
+                  "enum": [
+                    "ON_SITE",
+                    "REMOTE",
+                    "SHIFT",
+                    "OCD_CALL",
+                    "OVERTIME_PAID",
+                    "OVERTIME_TIME_COMP",
+                    "BUSINESS_TRIP_WORK"
+                  ],
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "interval_id",
+              "start_at",
+              "end_at",
+              "work_type",
+              "elapsed_seconds",
+              "linked_authorization_id",
+              "version"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "period_end": {
+        "format": "date",
+        "type": "string"
+      },
+      "period_start": {
+        "format": "date",
+        "type": "string"
+      },
+      "policy_status": {
+        "enum": [
+          "CONFIRMED",
+          "PROVISIONAL",
+          "BLOCKED"
+        ],
+        "type": "string"
+      },
+      "policy_version": {
+        "type": "string"
+      },
+      "preview_fingerprint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "report_type": {
+        "const": "OVERTIME",
+        "type": "string"
+      }
+    },
+    "required": [
+      "policy_version",
+      "policy_status",
+      "employee_identifier",
+      "period_start",
+      "period_end",
+      "authorizations",
+      "overtime_intervals",
+      "classified_components",
+      "election",
+      "findings"
+    ],
+    "type": "object"
+  },
+  "RecipientSubmissionPackageOut": {
+    "properties": {
+      "created_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "employee_identifier": {
+        "type": "string"
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "payload": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "period_end": {
+        "format": "date",
+        "type": "string"
+      },
+      "period_start": {
+        "format": "date",
+        "type": "string"
+      },
+      "purpose": {
+        "$ref": {
+          "enum": [
+            "SHIFT_REPORT",
+            "OVERTIME_PAID",
+            "OVERTIME_TIME_COMP",
+            "OCD_COMPENSATION",
+            "WORK_TIME_RECORD",
+            "RANDOM_CHECK"
+          ],
+          "type": "string"
+        }
+      },
+      "read_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "status": {
+        "type": "string"
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "version": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "purpose",
+      "period_start",
+      "period_end",
+      "version",
+      "status",
+      "employee_identifier",
+      "created_at",
+      "read_at",
+      "supersedes_id",
+      "payload"
+    ],
+    "type": "object"
+  },
+  "ShiftReportPreviewOut": {
+    "properties": {
+      "actual_end_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "actual_start_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "compensation_review_status": {
+        "enum": [
+          "NOT_APPLICABLE",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "type": "string"
+      },
+      "decision_maker_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "deviation_type": {
+        "anyOf": [
+          {
+            "$ref": {
+              "enum": [
+                "CANCELLED",
+                "RESCHEDULED",
+                "ADDITIONAL",
+                "SWAPPED",
+                "SHORTENED",
+                "OVERRUN",
+                "OVERRUN_GT_10H",
+                "MINOR_CHANGE",
+                "CANCELLED_SICKNESS",
+                "ABORTED_BY_COMPANY"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "employee_identifier": {
+        "type": "string"
+      },
+      "findings": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "rule_id": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "INFO",
+                  "WARNING",
+                  "CRITICAL",
+                  "BLOCKED_POLICY"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "rule_id",
+              "status",
+              "message"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "noticed_or_decided_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "paid_break_status": {
+        "enum": [
+          "EXPLICIT_FACT_REQUIRED",
+          "RECORDED"
+        ],
+        "type": "string"
+      },
+      "plan_source": {
+        "type": "string"
+      },
+      "planned_end_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "planned_start_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "policy_status": {
+        "enum": [
+          "PROVISIONAL",
+          "BLOCKED"
+        ],
+        "type": "string"
+      },
+      "policy_version": {
+        "type": "string"
+      },
+      "preview_fingerprint": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "reason": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "report_type": {
+        "const": "SHIFT_REPORT",
+        "type": "string"
+      },
+      "shift_assignment_id": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "required": [
+      "policy_version",
+      "policy_status",
+      "employee_identifier",
+      "shift_assignment_id",
+      "planned_start_at",
+      "planned_end_at",
+      "actual_start_at",
+      "actual_end_at",
+      "deviation_type",
+      "noticed_or_decided_at",
+      "decision_maker_type",
+      "reason",
+      "findings",
+      "paid_break_status",
+      "plan_source",
+      "compensation_review_status"
+    ],
+    "type": "object"
+  },
+  "SubmissionPackageOut": {
+    "properties": {
+      "created_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "employee_confirmed_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "id": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "payload": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "period_end": {
+        "format": "date",
+        "type": "string"
+      },
+      "period_start": {
+        "format": "date",
+        "type": "string"
+      },
+      "purpose": {
+        "$ref": {
+          "enum": [
+            "SHIFT_REPORT",
+            "OVERTIME_PAID",
+            "OVERTIME_TIME_COMP",
+            "OCD_COMPENSATION",
+            "WORK_TIME_RECORD",
+            "RANDOM_CHECK"
+          ],
+          "type": "string"
+        }
+      },
+      "recipients": {
+        "items": {
+          "$ref": {
+            "properties": {
+              "read_at": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "recipient_principal": {
+                "type": "string"
+              },
+              "recipient_type": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "recipient_principal",
+              "recipient_type",
+              "read_at"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "array"
+      },
+      "status": {
+        "type": "string"
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "version": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "purpose",
+      "period_start",
+      "period_end",
+      "version",
+      "status",
+      "supersedes_id",
+      "created_at",
+      "employee_confirmed_at",
+      "recipients",
+      "payload"
+    ],
+    "type": "object"
+  }
+}

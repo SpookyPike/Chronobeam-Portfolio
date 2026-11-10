@@ -1,0 +1,29 @@
+# Chronobeam — local development services only.
+#
+# Exactly one core application (backend/) plus one PostgreSQL database. Host
+# port 55432 is used so that other local PostgreSQL containers (e.g. on
+# 5432/5498) are never disturbed.
+#
+# The credentials below are non-secret development defaults matching
+# .env.example. Never reuse them for any non-local environment.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: chronobeam-db
+    environment:
+      POSTGRES_DB: chronobeam
+      POSTGRES_USER: chronobeam
+      POSTGRES_PASSWORD: chronobeam_dev_only
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - chronobeam_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronobeam -d chronobeam"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  chronobeam_pgdata:

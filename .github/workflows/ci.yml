@@ -1,0 +1,236 @@
+# Chronobeam CI.
+#
+# Staged by cost, so a one-line edit does not wait on the heavy proof:
+#
+#   check        the fast PR gate — exactly `just ci` (lint, format, typecheck,
+#                arch, the committed HTTP-contract digest, both test suites,
+#                migration round trip), plus the structural guards below.
+#   supply-chain dependency audits and a container image scan.
+#   e2e          the Playwright journey against a real backend.
+#   pilot-smoke  the isolated production-image + PostgreSQL + OIDC + recovery run.
+#
+# The three heavy jobs `need: check`, so they only start once the fast gate is
+# green. None of them uploads artifacts: a test report could carry personal data.
+#
+# - No deployment workflows (none yet).
+# - No caches of docs/, no artifacts with personal data: nothing is uploaded.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least privilege: every job here only reads the checkout. Declared explicitly
+# so the workflow does not inherit the repository default, and so a job added
+# later has to ask for more rather than receive it silently.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Fail (not skip) when the DB-backed test suite cannot reach PostgreSQL
+      CHRONOBEAM_REQUIRE_DB: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Node 22 (needed by pyright CLI)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.24.0
+
+      - name: uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          python-version: "3.12"
+
+      - name: just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.58.0
+
+      - name: Install dependencies from lockfiles
+        run: just install
+
+      - name: CI-equivalent checks (lint, format, typecheck, arch, contract, tests, migrations)
+        run: just ci
+
+      - name: Backend dependency audit
+        run: uv audit --project backend
+
+      # --- structural privacy / architecture guards (one line each) ---
+      - name: No Windows Zone.Identifier artifacts tracked
+        run: test "$(git ls-files | grep -c 'Zone.Identifier' || true)" -eq 0
+
+      - name: Exactly one deployable service in compose (db only, INV-14)
+        run: test "$(docker compose config --services | wc -l)" -eq 1 && docker compose config --services | grep -qx db
+
+      - name: Lockfiles are tracked
+        run: git ls-files --error-unmatch backend/uv.lock frontend/pnpm-lock.yaml >/dev/null
+
+  supply-chain:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.24.0
+
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.58.0
+
+      - name: Install frontend dependencies from the lockfile
+        run: cd frontend && pnpm install --frozen-lockfile
+
+      - name: Frontend dependency audit
+        run: cd frontend && pnpm audit --audit-level high
+
+      - name: Build the production image
+        run: just image-build
+
+      # Scans the image the pilot actually runs, not the Dockerfile. Only
+      # HIGH/CRITICAL with a fix available fail: an unfixable base-image CVE is
+      # an IT decision, not something this gate may invent.
+      #
+      # Pinned to v0.36.0 because every earlier line is broken UPSTREAM, in two
+      # different ways: 0.28-0.30 reference `aquasecurity/setup-trivy` by a tag
+      # that no longer exists (the job dies at "Unable to resolve action"), and
+      # 0.33/0.34 install a Trivy release that has been withdrawn — the tag
+      # resolves but the release has no assets, so the installer finds the
+      # version and then fails to download it. 0.35+ pin a release that exists.
+      - name: Container image vulnerability scan
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: chronobeam:local
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CHRONOBEAM_REQUIRE_DB: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.24.0
+
+      - name: uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          python-version: "3.12"
+
+      - name: just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.58.0
+
+      - name: Install dependencies from lockfiles
+        run: just install
+
+      - name: Install the Playwright browser
+        run: cd frontend && pnpm exec playwright install --with-deps chromium
+
+      - name: Dev database, schema and seed data
+        run: |
+          just db-up
+          just migrate
+          just seed-dev
+
+      # What this suite is NOT: an integration test against live backend
+      # behaviour. Every spec registers `page.route("**/api/v1/**")`, so the
+      # journeys run against fixed API payloads. What the backend IS still
+      # needed for: requests that escape a stub — the `/api/v1/me` session
+      # bootstrap on first paint — are proxied by vite, and with nothing
+      # listening they fail with ECONNREFUSED. Live-backend coverage is the
+      # `pilot-smoke` job's job, not this one's.
+      - name: Backend for the E2E suite
+        run: |
+          cd backend && CHRONOBEAM_ENV=dev uv run uvicorn app.main:app --port 8000 &
+          for _ in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:8000/health/live >/dev/null && exit 0
+            sleep 1
+          done
+          echo "backend did not become live" >&2
+          exit 1
+
+      - name: Frontend journeys (API stubbed per spec)
+        run: just e2e
+
+  pilot-smoke:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.24.0
+
+      - name: uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          python-version: "3.12"
+
+      - name: just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.58.0
+
+      - name: Install dependencies from lockfiles
+        run: just install
+
+      # Runs the CLI on the HOST against an isolated container + database, and
+      # proves dump, empty-target restore, every-domain verification and the
+      # partial-restore failure path.
+      - name: Isolated production-image pilot smoke
+        run: just pilot-smoke

@@ -1,0 +1,3346 @@
+/* Chronobeam global stylesheet (PHASE-11 product polish).
+ *
+ * One shared visual language on the product palette. Token-first: every color,
+ * radius and shadow flows from :root custom properties. Class names are
+ * stable product hooks — components do not carry one-off styles.
+ *
+ * Palette (owner): #0D1546 navy (structure/primary), #F39200 orange (accent
+ * only), #559DBB/#81B0C8/#A4C3D6/#C5D6E4/#E3EBF2 blue-greys (surfaces,
+ * borders), #B2B2B2 muted. Semantic green/red reserved for success/error
+ * (never brand). Light work surfaces; no remote fonts, no third-party assets
+ * (DP-PRIV-004). */
+
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --cb-navy: #0d1546;
+  --cb-navy-strong: #0a113a;
+  --cb-navy-soft: #1a2568;
+  --cb-orange: #f39200;
+  --cb-blue: #559dbb;
+  --cb-blue-2: #81b0c8;
+  --cb-blue-3: #a4c3d6;
+  --cb-blue-4: #c5d6e4;
+  --cb-blue-5: #e3ebf2;
+  --cb-gray: #b2b2b2;
+
+  /* Surfaces & text */
+  --cb-canvas: #f4f8fb;
+  --cb-surface: #ffffff;
+  --cb-surface-tint: #eef4f9;
+  --cb-text: #1c2740;
+  --cb-text-soft: #4a5876;
+  /* Was #6b7790: 4.21:1 on --cb-canvas and 3.73:1 on --cb-blue-5, both under
+   * WCAG AA 4.5:1 (review 2026-09-22). Derived from --cb-text-soft rather than
+   * introducing a new hex, so the ramp stays inside the product palette.
+   * Computed: ~#586581 — 5.47:1 on --cb-canvas, 4.85:1 on --cb-blue-5. */
+  --cb-text-muted: color-mix(in srgb, var(--cb-text-soft) 92%, var(--cb-surface));
+  --cb-border: var(--cb-blue-4);
+  --cb-border-strong: var(--cb-blue-3);
+
+  /* Semantics (status only) */
+  --cb-success: #176c45;
+  --cb-danger: #b42318;
+  --cb-warning: #9a5b00;
+  --cb-blocked: #6b3fa0;
+
+  /* Shape & elevation */
+  --cb-radius: 10px;
+  --cb-radius-sm: 7px;
+  --cb-radius-pill: 999px;
+  --cb-shadow-sm: 0 1px 2px rgb(13 21 70 / 0.06);
+  --cb-focus: var(--cb-orange);
+
+  /* Derived tints & elevation (review 2026-09-22). Every value is mixed from
+   * the product palette above — no new hue enters the system. */
+  --cb-navy-tint: color-mix(in srgb, var(--cb-navy) 5%, var(--cb-surface));
+  --cb-navy-line: color-mix(in srgb, var(--cb-navy) 24%, transparent);
+  --cb-danger-soft: color-mix(in srgb, var(--cb-danger) 7%, var(--cb-surface));
+  --cb-danger-line: color-mix(in srgb, var(--cb-danger) 42%, transparent);
+  --cb-warning-soft: color-mix(in srgb, var(--cb-warning) 11%, var(--cb-surface));
+  --cb-warning-line: color-mix(in srgb, var(--cb-warning) 40%, transparent);
+  --cb-success-soft: color-mix(in srgb, var(--cb-success) 8%, var(--cb-surface));
+  /* One added elevation step, for the single genuinely floating layer (the
+   * overflow popover). Same navy tint and offset+soft-blur form as
+   * --cb-shadow-sm, so it extends the existing elevation language. */
+  --cb-shadow-md:
+    0 6px 18px color-mix(in srgb, var(--cb-navy) 10%, transparent),
+    0 1px 3px color-mix(in srgb, var(--cb-navy) 6%, transparent);
+  --cb-ring: 0 0 0 3px color-mix(in srgb, var(--cb-focus) 30%, transparent);
+
+  /* Motion (Slice 10, owner's polish request): one duration and one easing for
+   * every state change in the app — 160 ms sits inside the 120–200 ms band,
+   * long enough to read as a transition and short enough never to delay an
+   * action. Same token-first rule as the palette above: the motion block at the
+   * end of this file references these two values and nothing else, so a single
+   * change retunes the whole app. */
+  --cb-motion: 160ms;
+  --cb-motion-ease: ease-out;
+
+  --cb-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cb-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+
+  /* ------------------------------------------- calendar semantic categories
+   *
+   * One accent per calendar category, shared by the month grid, the day panel's
+   * Planned assignments section and every future calendar/group-planning
+   * surface, so no component picks its own colour. The accent is the ONLY
+   * per-category value: each bar derives its own tint and line from it with
+   * `color-mix`, so adding a category is one token plus one `data-cal-kind` row.
+   *
+   * These values are MEASURED, not asserted. Every accent, its 12% tint and its
+   * 70% line were read back from the running app through a real paint property,
+   * and every ratio below was recomputed from those measured hexes:
+   *
+   *   token            accent    tint      white/acc  text/tint  acc/tint
+   *   shift            #1a2568   #e4e5ed      13.92      11.83     11.09
+   *   ocd              #0f6a78   #e2edef       6.26      12.45      5.25
+   *   vacation         #536718   #eaede3       6.32      12.54      5.34
+   *   shiftcomp        #7a4265   #efe8ed       7.51      12.33      6.24
+   *   flex             #2f5fa8   #e6ecf5       6.32      12.51      5.32
+   *   sick             #6b6259   #edeceb       5.97      12.59      5.06
+   *
+   * white/accent >= 4.5 is the phone glyph on a solid fill; text/tint >= 4.5 is
+   * the desktop label; acc/tint >= 3.0 is WCAG 2.2 SC 1.4.11 for the leading
+   * stripe. All pass. Separation was measured in CIELAB dE76 against every other
+   * category AND against the existing semantic colours: the minimum over all
+   * required distinctions is 25.5 ("clearly different"; <10 is indistinguishable).
+   *
+   * Two accents that looked reasonable on paper were rejected by that
+   * measurement: a violet flex accent measured dE 1.8 from --cb-blocked (a
+   * BLOCKED_POLICY finding marker) and a slate sick accent measured dE 7.0 from
+   * --cb-text-soft (ordinary body text). Neither ships. */
+  --cb-cal-shift: #1a2568;
+  --cb-cal-ocd: #0f6a78;
+  --cb-cal-vacation: #536718;
+  --cb-cal-shiftcomp: #7a4265;
+  --cb-cal-flex: #2f5fa8;
+  --cb-cal-sick: #6b6259;
+
+  /* ------------------------------- calendar non-working structure
+   *
+   * A desaturated maroon family, deliberately NOT --cb-danger: red here means
+   * "institutionally non-working", never an error. Measured dE vs --cb-danger is
+   * 37.2 / 36.0 / 49.3, so the two cannot be read as the same signal even before
+   * the form difference below is considered.
+   *
+   * The form difference is what actually keeps them apart, and it is deliberate:
+   * non-working structure paints a cell BACKGROUND WASH and the DATE NUMBER,
+   * while a finding paints a WORD (desktop) or a corner GLYPH (phone) in its own
+   * severity token. Different token, different value, different element,
+   * different position. Weekends take the number only; holidays and employer-free
+   * days add a wash and stay distinguishable from EACH OTHER by their tint
+   * weight, by the H / X marker beside the date, and by the spoken
+   * classification - never by the shade of red alone. */
+  --cb-cal-weekend: #a24455;
+  --cb-cal-holiday: #982f49;
+  --cb-cal-employer-free: #8c455d;
+  --cb-cal-holiday-tint: color-mix(in srgb, var(--cb-cal-holiday) 8%, var(--cb-surface));
+  --cb-cal-employer-free-tint: color-mix(
+    in srgb,
+    var(--cb-cal-employer-free) 6%,
+    var(--cb-surface)
+  );
+
+  font-family: var(--cb-font);
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cb-canvas);
+  color: var(--cb-text);
+  font-size: 0.95rem;
+  /* Mobile (review 2026-09-22): an intentional tap highlight from the palette
+   * instead of the platform default. */
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--cb-navy) 12%, transparent);
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.app-shell {
+  min-height: 100dvh;
+  display: grid;
+  /* UI-005: the implicit `auto` column was sized by its content's min-content
+   * width, so the phone-width month scroller (a `nowrap` flex row) stretched the
+   * whole page to 487px at a 390px viewport. A `minmax(0, 1fr)` column cannot be
+   * widened by content, which is the same idiom the other grids here use. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--cb-surface);
+  border-bottom: 1px solid var(--cb-border);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Skip link (UI-048, review 2026-09-22): parked above the sticky header until
+ * it is focused, then it drops into view. Nothing else about the header moves. */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 40;
+  padding: 0.5rem 0.9rem;
+  background: var(--cb-navy);
+  color: var(--cb-surface);
+  border-radius: var(--cb-radius-sm);
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+.app-brand,
+.app-brand img {
+  display: block;
+}
+
+.app-brand img {
+  width: auto;
+  max-width: min(12rem, 42vw);
+  height: 2.1rem;
+  object-fit: contain;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-header nav a {
+  border-radius: var(--cb-radius-pill);
+  padding: 0.4rem 0.85rem;
+  text-decoration: none;
+  color: var(--cb-navy);
+  font-weight: 500;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-header nav a:hover {
+  background: var(--cb-blue-5);
+}
+
+/* Shared in-text link treatment (PHASE-11 vision round): no browser-default
+ * blue anywhere; button-like links keep their own no-underline styles.
+ *
+ * The underline colour was `--cb-blue-3` (#a4c3d6), which is 1.55:1 on
+ * `--cb-surface` — an underline nobody can see, so every in-text link read as
+ * plain text and the app's own navigation stopped looking navigable (found
+ * while wiring the UI-046 finding-day link, whose whole job is to be followed).
+ * `--cb-blue` is the palette's mid blue-grey: 3.03:1 on white, which meets
+ * WCAG 1.4.11 (non-text contrast, 3:1) and stays inside the product ramp. */
+a {
+  color: var(--cb-navy);
+  text-decoration: underline;
+  text-decoration-color: var(--cb-blue);
+  text-underline-offset: 2px;
+}
+a:hover {
+  color: var(--cb-navy-soft);
+}
+a.month-step,
+a.primary-link,
+a.quick-action,
+.workspace-actions a,
+.travel-month-nav a,
+.app-header nav a,
+.more-menu a {
+  text-decoration: none;
+}
+
+.app-header nav a[aria-current="page"] {
+  background: var(--cb-navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* UI-005: the nav toggle only exists where the nav is collapsed (≤700px); on a
+ * desktop the nav is always on screen and this control would be a second way to
+ * do nothing. `.nav-toggle` is EXCLUDED from the generic button chain above for
+ * the same reason `.menu-toggle` and `.day-cell` are: that rule is 0,6,1 and
+ * silently outranked this `display: none`. */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  background: var(--cb-surface);
+  color: var(--cb-navy);
+  font-weight: 600;
+  padding: 0 0.8rem;
+}
+.nav-toggle[aria-expanded="true"] {
+  background: var(--cb-blue-5);
+}
+
+/* Identity chip: who is acting + which work area (PHASE-11). */
+.identity-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+  margin-left: auto;
+  padding-left: 1rem;
+  border-left: 1px solid var(--cb-border);
+  white-space: nowrap;
+}
+.identity-chip strong {
+  font-size: 0.85rem;
+  color: var(--cb-navy);
+}
+.identity-chip span {
+  font-size: 0.75rem;
+  color: var(--cb-text-muted);
+}
+
+main {
+  padding: 1.25rem;
+  max-width: 88rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+footer {
+  padding: 0.9rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--cb-text-muted);
+  border-top: 1px solid var(--cb-border);
+  background: var(--cb-surface);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ typography */
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--cb-navy);
+  line-height: 1.25;
+}
+h1 {
+  font-size: 1.55rem;
+  margin: 0.2rem 0 0.9rem;
+}
+h2 {
+  font-size: 1.2rem;
+  margin: 0.3rem 0 0.7rem;
+}
+h3 {
+  font-size: 1.02rem;
+  margin: 0.4rem 0 0.5rem;
+}
+h4 {
+  font-size: 0.95rem;
+  margin: 0.3rem 0 0.4rem;
+}
+
+p {
+  margin: 0.35rem 0;
+}
+
+.eyebrow {
+  color: var(--cb-navy);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.15rem;
+}
+
+dt {
+  font-size: 0.78rem;
+  color: var(--cb-text-muted);
+}
+dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.balance,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.balance {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* -------------------------------------------------------------- statuses */
+
+.status-ok {
+  color: var(--cb-success);
+}
+.status-error {
+  color: var(--cb-danger);
+}
+/* Amber, not red: an uncovered calendar month or an active account missing master
+ * data is an operator-fixable gap, not a broken service. Same "noticeable, not
+ * catastrophic" role --cb-warning already plays for a month-level finding. */
+.status-warning {
+  color: var(--cb-warning);
+}
+.status-muted {
+  color: var(--cb-text-muted);
+}
+.private-note {
+  font-size: 0.88rem;
+  color: var(--cb-text-soft);
+  max-width: 68ch;
+}
+.private-badge {
+  color: var(--cb-navy);
+  border: 1px solid var(--cb-blue-3);
+  background: var(--cb-blue-5);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.12rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.severity-warning {
+  color: var(--cb-warning);
+}
+.severity-critical {
+  color: var(--cb-danger);
+}
+/* BLOCKED_POLICY is a blocking state for the employee, not a neutral info
+ * note — use the error tone on the palette (vision round). */
+.severity-blocked_policy {
+  color: var(--cb-danger);
+}
+.remaining-ok {
+  color: var(--cb-success);
+}
+.remaining-excess {
+  color: var(--cb-danger);
+}
+.source-badge {
+  font-size: 0.75rem;
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.05rem 0.55rem;
+  color: var(--cb-text-soft);
+  background: var(--cb-surface);
+}
+.policy-badge {
+  color: var(--cb-text-soft);
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.1rem 0.6rem;
+  font-size: 0.78rem;
+  background: var(--cb-surface-tint);
+  white-space: nowrap;
+}
+.work-type-chip {
+  font-size: 0.78rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.05rem 0.55rem;
+  white-space: nowrap;
+  color: var(--cb-navy);
+  background: var(--cb-surface-tint);
+}
+/* Engine rule IDs appear only as secondary detail (PHASE-11 F15). */
+.finding-rule {
+  font-family: var(--cb-mono);
+  font-size: 0.75rem;
+  color: var(--cb-text-muted);
+  background: var(--cb-blue-5);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.02rem 0.45rem;
+  margin-left: 0.35rem;
+  white-space: nowrap;
+}
+.shift-findings-details {
+  font-size: 0.9rem;
+  margin-block: 0.4rem;
+}
+/* Disclosures (review 2026-09-22): both summaries get one affordance, and the
+ * native marker is restored. `display: inline-flex` (was here) and
+ * `list-style: none` plus a hidden ::-webkit-details-marker (in .tech-details)
+ * had removed the only visual cue that either control is expandable —
+ * "Shift findings (2)" rendered as plain bold text. */
+.tech-details summary,
+.shift-findings-details summary {
+  cursor: pointer;
+  color: var(--cb-text-soft);
+  font-weight: 550;
+  font-size: 0.8rem;
+  display: list-item;
+  list-style-position: inside;
+  padding: 0.15rem 0;
+  text-decoration: none;
+}
+.tech-details summary:hover,
+.shift-findings-details summary:hover,
+.shift-findings-details[open] summary {
+  color: var(--cb-navy);
+}
+.shift-findings-details .shift-findings {
+  margin-top: 0.4rem;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  /* Mobile (review 2026-09-22): remove the double-tap-zoom delay on controls. */
+  touch-action: manipulation;
+}
+button,
+select,
+input[type="time"] {
+  min-height: 2.25rem;
+}
+/* Native selects size to their longest option; never let them overflow the
+ * card or the viewport on phones. */
+select {
+  max-width: 100%;
+  min-width: 0;
+}
+button {
+  cursor: pointer;
+}
+
+/* PHASE-11 F18: every plain button gets the shared secondary treatment by
+ * default (no browser-default grey); quiet controls override below.
+ * aria-pressed=true switches to the active-pill treatment instead. */
+/* The :not() chain below is specificity 0,6,1 — it outranks every plain class
+ * selector in this file. Destructive buttons are therefore EXCLUDED here (the
+ * same mechanism already used for .menu-toggle, .day-cell, .admin-tab, …) rather
+ * than trying to out-specify it downstream, which is what the review fix first
+ * attempted and what silently failed: `button.danger`, `.danger-ghost` and
+ * `.menu-danger` all still computed as ordinary navy secondary buttons. */
+button:not(.menu-toggle):not(.note-toggle):not(.interval-summary):not(.day-cell):not(
+    .admin-tab
+  ):not([aria-pressed="true"]):not(.danger):not(.danger-ghost):not(.menu-danger):not(
+    .nav-toggle
+  ):not(.primary):not(.sort-header) {
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.42rem 0.9rem;
+  background: var(--cb-surface);
+  color: var(--cb-navy);
+  font-weight: 550;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+button:not(.menu-toggle):not(.note-toggle):not(.interval-summary):not(.day-cell):not(
+    .admin-tab
+  ):not([aria-pressed="true"]):not(.danger):not(.danger-ghost):not(.menu-danger):not(
+    .nav-toggle
+  ):not(.primary):not(.sort-header):hover:not(:disabled) {
+  background: var(--cb-blue-5);
+  border-color: var(--cb-blue-3);
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 1;
+  cursor: default;
+  color: var(--cb-text-muted);
+  border-color: var(--cb-border);
+  background: var(--cb-surface-tint);
+}
+button:disabled:not(.menu-toggle):not(.note-toggle):not(.interval-summary):not(.day-cell):not(
+    .admin-tab
+  ):not(.primary) {
+  color: var(--cb-text-soft);
+  background: var(--cb-surface-tint);
+  box-shadow: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cb-focus);
+  outline-offset: 2px;
+  border-radius: var(--cb-radius-sm);
+}
+
+/* Shared hierarchy: primary = the next committing action (navy solid),
+ * secondary = white + navy border, quiet = ghost, danger = red outline. */
+.workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  margin-block: 0.8rem;
+}
+.workspace-actions a,
+/* 0,2,1 — outranks a plain `button.danger-ghost`. Destructive buttons are
+ * excluded here for the same reason as in the generic rule above. */
+.workspace-actions
+  button:not(.menu-toggle):not(.danger):not(.danger-ghost):not(.menu-danger):not(.primary),
+.quick-action,
+.more-menu .menu-toggle,
+button.secondary,
+.secondary-action {
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.42rem 0.9rem;
+  text-decoration: none;
+  color: var(--cb-navy);
+  background: var(--cb-surface);
+  font-size: 0.88rem;
+  font-weight: 550;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.workspace-actions a:hover,
+.workspace-actions
+  button:not(.menu-toggle):not(.danger):not(.danger-ghost):not(.menu-danger):not(
+    .primary
+  ):hover:not(:disabled),
+.quick-action:hover:not(:disabled),
+.more-menu .menu-toggle:hover:not(:disabled),
+button.secondary:hover:not(:disabled),
+.secondary-action:hover:not(:disabled) {
+  background: var(--cb-blue-5);
+  border-color: var(--cb-blue-3);
+}
+button.primary {
+  background: var(--cb-navy);
+  color: #fff;
+  border: 1px solid var(--cb-navy);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.45rem 1rem;
+  font-weight: 600;
+  min-height: 2.4rem;
+}
+button.primary:hover:not(:disabled) {
+  background: var(--cb-navy-soft);
+  border-color: var(--cb-navy-soft);
+}
+button.primary:disabled {
+  background: var(--cb-blue-3);
+  border-color: var(--cb-blue-3);
+  color: #fff;
+}
+
+a.primary-link {
+  background: var(--cb-navy);
+  color: #fff !important;
+  border-color: var(--cb-navy) !important;
+  font-weight: 600 !important;
+}
+a.primary-link:hover {
+  background: var(--cb-navy-soft);
+  border-color: var(--cb-navy-soft) !important;
+}
+
+.add-interval {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px dashed var(--cb-border-strong);
+  background: var(--cb-surface-tint);
+  color: var(--cb-navy);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.5rem;
+  font-weight: 600;
+}
+.add-interval:hover:not(:disabled) {
+  background: var(--cb-blue-5);
+  border-style: solid;
+}
+
+/* Destructive actions (review 2026-09-22). The generic button rule below wins
+ * on specificity (0,6,1 vs 0,1,0), so these must match it to reach the screen —
+ * before this fix `button.danger`, `.danger-ghost` and `.menu-danger` all
+ * computed as an ordinary navy secondary button. */
+.row-menu-inline button.menu-danger,
+button.danger-ghost,
+button.danger {
+  color: var(--cb-danger);
+  border: 1px solid var(--cb-danger-line);
+  background: var(--cb-surface);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.42rem 0.9rem;
+  font-weight: 550;
+}
+.row-menu-inline button.menu-danger:hover:not(:disabled),
+button.danger-ghost:hover:not(:disabled),
+button.danger:hover:not(:disabled) {
+  background: var(--cb-danger-soft);
+  border-color: var(--cb-danger);
+}
+.selected-choice {
+  border-color: var(--cb-navy) !important;
+  background: var(--cb-navy) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+/* Inline two-step confirmations and action notices */
+.confirm-row {
+  display: inline-flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+/* Screen-reader-only announcement for the armed inline confirmation (WCAG 2.2
+   SC 4.1.3 Status Messages). It must stay in the accessibility tree — unlike
+   `display: none`/`visibility: hidden` — so it is clipped to a point instead. */
+.confirm-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.action-notice {
+  font-size: 0.9rem;
+}
+.action-notice[data-kind="ok"] {
+  color: var(--cb-success);
+}
+.action-notice[data-kind="error"] {
+  color: var(--cb-danger);
+}
+
+/* Session expiry is announced WITHOUT unmounting the work area, so the notice
+   sits above the routed content and stays visible while the user copies
+   anything they still need. */
+.session-expired-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--cb-orange);
+  border-left-width: 4px;
+  border-radius: var(--cb-radius);
+  background: var(--cb-surface);
+  color: var(--cb-navy);
+  font-size: 0.95rem;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.workspace-heading,
+.day-heading,
+.interval-actions,
+.review-summary,
+.profile-grid {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.workspace-heading {
+  align-items: start;
+  margin-bottom: 0.4rem;
+}
+
+/* Month-context navigation (PHASE-11): keeps the route $month across the
+ * month-scoped pages so users never leave their working month. */
+.month-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.25rem;
+  align-items: center;
+  margin: 0.5rem 0 1rem;
+  /* UI-005: this nav is a grid item on `/month/$m/review`, and a `nowrap`
+   * scroller inside it raises its min-content width — with the default
+   * `min-width: auto` the item could not shrink below that, so the review page
+   * stayed 493px wide at a 390px viewport. Zeroing the automatic minimum is
+   * what lets the scroller do its job. */
+  min-width: 0;
+}
+/* UI-005: the stepper and the section tabs are two groups so that on a phone
+ * the scroller can own the tabs alone and the stepper stays put. The two
+ * wrappers reproduce the single strip's spacing on a wide screen exactly. */
+.month-steps,
+.month-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.25rem;
+  align-items: center;
+}
+.month-context .month-step {
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  background: var(--cb-surface);
+  color: var(--cb-navy);
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  /* UI-039: `min-height` on an inline link does nothing, so the 44px phone
+   * target below was silently inert; the step is a box now. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+}
+.month-context .month-step:hover {
+  background: var(--cb-blue-5);
+}
+.month-context .month-label {
+  font-weight: 650;
+  padding: 0 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.month-context .month-sep {
+  width: 1px;
+  height: 1.4rem;
+  background: var(--cb-border);
+  /* UI-015: a real grouping gap — the strip reads `<stepper> | <label> | tabs`. */
+  margin: 0 0.8rem;
+}
+/* UI-001: the current-section pill belongs to the section set only. The
+   prev/this/next step controls are their own set — `This month` is a current
+   destination when the current month is open, and it must not draw a second
+   navy pill beside the section one. */
+.month-context a.month-tab[aria-current="page"] {
+  background: var(--cb-navy);
+  border-color: var(--cb-navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.workspace-grid {
+  display: grid;
+  /* The CALENDAR gets the larger share. Measured from the live layout: a bar
+   * reading "On-call 19:00" needs about 80px of cell content, which a 1fr column
+   * could not give it at any desktop width — every label ellipsized. The month
+   * grid is the primary scanning surface here and the day panel is its detail, so
+   * the split follows that, not the other way round: the calendar takes about two
+   * thirds. The day panel keeps a 20rem floor, which is still comfortable for its
+   * forms. Measured, this is what lets the longest bar label ("Shift cancelled",
+   * 78px) sit whole in a cell while the totals grid below keeps three readable
+   * columns. */
+  grid-template-columns: minmax(22rem, 1.6fr) minmax(20rem, 1fr);
+  gap: 1.1rem;
+  align-items: stretch;
+}
+
+.calendar-panel,
+.day-panel,
+.profile-grid > section,
+.review-page,
+.preview,
+.card,
+.submission-card,
+.hr-request-panel,
+.recipient-detail,
+.frozen-view,
+.ocd-card,
+.ot-auth,
+.travel-trip-card,
+.admin-create,
+.admin-user-detail,
+.admin-system-card {
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  padding: 1rem;
+  background: var(--cb-surface);
+  box-shadow: var(--cb-shadow-sm);
+}
+.frozen-view {
+  max-width: var(--content-reading, 52rem);
+}
+
+/* ------------------------------------------------------------- calendar */
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.calendar-weekdays {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--cb-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.day-cell {
+  display: grid;
+  /* One explicit, shrinkable column. With an implicit `auto` column the grid
+   * sized itself to its widest child (a long day-status chip), which pushed
+   * that chip past the cell's own border. */
+  grid-template-columns: minmax(0, 1fr);
+  text-align: left;
+  align-content: start;
+  gap: 0.15rem;
+  min-height: 5rem;
+  /* 0.4rem rather than 0.45rem: measured, the longest bar label ("Shift
+   * cancelled", 15 characters) needed 4px more than the cell could give it, and a
+   * truncated CATEGORY word is the one thing the bar must never show. The 1.6px
+   * taken off each side is invisible at this density and buys the label room at
+   * every width. */
+  padding: 0.4rem;
+  border: 1px solid var(--cb-border);
+  background: var(--cb-surface);
+  border-radius: var(--cb-radius-sm);
+  font-variant-numeric: tabular-nums;
+}
+.day-cell:hover {
+  border-color: var(--cb-blue-3);
+  background: var(--cb-surface-tint);
+}
+/* No `outline: none` here (review 2026-09-22): it outranked the global
+ * :focus-visible ring, so the one cell a keyboard user returns to was the only
+ * cell with no focus indicator (WCAG 2.4.7). The navy border marks selection;
+ * the orange ring marks focus; the two coexist. */
+.day-cell.selected {
+  border: 2px solid var(--cb-navy);
+  background: var(--cb-blue-5);
+}
+/* The date grid is now a grid of pale, sometimes TINTED cells (a holiday wash is
+ * 1.14:1 against white), so the global orange ring alone is not a reliable
+ * "where am I" cue when the keyboard moves between two adjacent cells. A second,
+ * navy outline outside the orange ring is 17.32:1 against white and stays visible
+ * on every tint. Two outlines rather than a replacement: the orange ring is the
+ * app-wide focus language, the navy ring is what makes it legible HERE. */
+.day-cell:focus-visible {
+  outline: 2px solid var(--cb-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--cb-navy);
+}
+.day-cell .cell-number {
+  font-weight: 650;
+}
+.day-cell small {
+  font-size: 0.75rem;
+  color: var(--cb-text-soft);
+}
+/* Severity must win inside the cell (review 2026-09-22): the generic
+ * `.day-cell small` rule above is 0,1,1 and was repainting every CRITICAL and
+ * WARNING finding as neutral --cb-text-soft, the same colour as "No work". */
+.day-cell small.cell-finding.severity-warning {
+  color: var(--cb-warning);
+}
+.day-cell small.cell-finding.severity-critical,
+.day-cell small.cell-finding.severity-blocked_policy {
+  color: var(--cb-danger);
+}
+.day-cell .cell-delta {
+  font-weight: 700;
+}
+/* Reading measure (review 2026-09-22): unbounded day-panel prose measured ~94ch
+ * while .private-note is already capped at 68ch. Apply the same cap. */
+.day-panel p {
+  max-width: 68ch;
+}
+
+/* ------------------------------------------------- day panel sections */
+
+/* The day panel is ONE surface divided by headings and hairline rules, not a
+ * stack of nested cards. The hierarchy reads from the heading order — h2 is the
+ * day, h3 is a section — and from the rules, so nothing has to be wrapped in
+ * another bordered box to be understood as a group. */
+.day-section {
+  border-top: 1px solid var(--cb-border);
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+}
+.day-section > h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+/* Sub-headings inside a section (the Actual work timeline's own parts) are h4s
+ * under the section's h3 — see the heading outline in the day panel. */
+.day-section h4 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--cb-text-soft);
+}
+
+/* Day status. This list had no rule at all, so the Correct/Remove controls sat
+ * flush against the status text ("Vacation (full day)Correct") and the row had
+ * no separation from the quick-action toolbar above it. */
+.day-status-list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.day-status-list > li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.day-status-label {
+  font-weight: 550;
+}
+/* The declared status leads with a bullet, the way the findings list does: it is
+ * a fact the employee stated, and the controls beside it act on it. */
+.day-status-label::before {
+  content: "• ";
+  color: var(--cb-text-soft);
+}
+/* The findings ABOUT the declared statuses, named in words rather than by engine
+ * code. Indented under the status they qualify and marked with a warning glyph so
+ * they are not mistaken for a second status entry. */
+.day-status-findings {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0 0 0 1.1rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+.day-status-findings > li::before {
+  content: "⚠ ";
+  color: inherit;
+}
+
+/* Planned assignments — the day's actionable content, and the only place a plan
+ * is read or created. */
+.planned-assignments .shift-card:first-of-type,
+.planned-row:first-of-type {
+  border-top: 0;
+  margin-top: 0.6rem;
+  padding-top: 0;
+}
+.planned-row {
+  border-top: 1px solid var(--cb-border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.planned-row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.planned-row-head h4 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+.planned-row-times {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+}
+.planned-row-times div {
+  display: grid;
+  gap: 0.1rem;
+}
+.planned-row-times dt {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+/* Two creation actions of equal weight, side by side where there is room and
+ * stacked where there is not. `.add-interval` is `width: 100%`, so a flex row
+ * would force it to fill the line and push its sibling down; equal grid tracks
+ * are what keeps the pair on one row. */
+.planned-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  align-items: start;
+}
+/* An OPEN add-shift form is a full-width editor, not a third column: it spans the
+ * row so its two date-time fields keep their width at every viewport. */
+.planned-actions > .interval-editor {
+  grid-column: 1 / -1;
+}
+/* The on-call link takes the same secondary treatment as its sibling button, so
+ * the two creation actions read as one row of equal weight rather than as a
+ * button next to an incidental piece of text. */
+.planned-add {
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.5rem;
+  color: var(--cb-navy);
+  background: var(--cb-surface);
+  font-size: 0.88rem;
+  font-weight: 550;
+  min-height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.planned-add:hover {
+  background: var(--cb-blue-5);
+  border-color: var(--cb-blue-3);
+}
+
+/* The steering sentence that travels WITH the destructive shift item, inside the
+ * menu: it is read at the moment of choice instead of being one more paragraph
+ * on the card, which is what let the destructive control dominate before. */
+.menu-note {
+  margin: 0.1rem 0.25rem 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--cb-text-soft);
+  max-width: 32ch;
+  white-space: normal;
+}
+/* Scoped to the menu ROOT on purpose. `.menu-popover` sets `min-width: 14rem` and
+ * appears LATER in this file, so a bare `.shift-actions-popover` of equal
+ * specificity lost to it silently — the width below never applied at all.
+ *
+ * `max-content`, not another magic number: measured, the longest item ("Remove
+ * plan entered by mistake") needs 250px of text and a 14rem popover gave it 197,
+ * so it wrapped onto two lines while its three siblings stayed on one — the menu
+ * looked ragged for no reason. The popover now takes exactly the width its
+ * longest item needs and is capped by the viewport, so it cannot push past the
+ * screen edge on a phone. */
+.shift-actions .shift-actions-popover {
+  /* 18.5rem = 296px, derived from the measurement above: 250px of text for the
+   * longest item + 28.8px of item padding + 9.6px of popover padding + 2px of
+   * border, with 7px of headroom. `max-content` was tried first and produced a
+   * 517px popover here — the grid inside `.menu-popover` resolves it far wider
+   * than the widest item needs — so the width is stated instead of inferred. */
+  min-width: 18.5rem;
+  max-width: calc(100vw - 1.5rem);
+}
+
+/* ------------------------------------------- non-working calendar structure
+ *
+ * `data-nonworking` is derived in the component from the resolved calendar class
+ * AND the date's own weekday: the server emits `WEEKDAY` for Saturdays and
+ * Sundays too (labels.ts, EINV-10), so a weekend cannot be read off the class.
+ *
+ * Order matters. These rules deliberately follow `.day-cell.selected` so the
+ * structural wash survives selection — a holiday stays visibly a holiday while
+ * it is open, and selection is carried by the navy border, not by the fill. The
+ * date number keeps its colour for the same reason. */
+.day-cell[data-nonworking="WEEKEND"] .cell-number {
+  color: var(--cb-cal-weekend);
+}
+.day-cell[data-nonworking="PUBLIC_HOLIDAY"] {
+  background: var(--cb-cal-holiday-tint);
+}
+.day-cell[data-nonworking="PUBLIC_HOLIDAY"] .cell-number {
+  color: var(--cb-cal-holiday);
+}
+.day-cell[data-nonworking="EMPLOYER_FREE"] {
+  background: var(--cb-cal-employer-free-tint);
+}
+.day-cell[data-nonworking="EMPLOYER_FREE"] .cell-number {
+  color: var(--cb-cal-employer-free);
+}
+/* The H / X marker beside the date. It is the non-colour carrier for the two
+ * institutional classes and is the ONLY thing that separates a statutory public
+ * holiday from an employer-free day at phone density, where there is no room for
+ * either label. */
+.cell-nonworking-mark {
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ---------------------------------------------------- calendar event bars
+ *
+ * One marker, two densities, and the accent is the only per-category value: the
+ * tint, the line and the phone fill are all derived from `--cal-accent`, which
+ * `data-cal-kind` sets. A seventh category, or a future group-planning surface,
+ * therefore needs one token plus one row — not a second copy of these rules.
+ *
+ * The bars are PRESENTATIONAL and carry `aria-hidden`: the whole date is already
+ * a single <button>, and that button's `aria-label` REPLACES its children for
+ * assistive technology. Putting a name on each bar would therefore add nothing a
+ * screen reader can reach; the day button's own name states every event's full
+ * phrase, including the ones the overflow chip hides. This is what keeps a date
+ * exactly one keyboard stop. */
+.cal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.16rem;
+  min-width: 0;
+  padding: 0.02rem 0.22rem;
+  border: 1px solid color-mix(in srgb, var(--cal-accent) 70%, var(--cb-surface));
+  /* The leading stripe is the category cue and is 2px: SC 1.4.11 asks for
+   * CONTRAST against the adjacent colour (measured 4.66:1 or better against every
+   * tint), not for a minimum thickness, and the 3px it used to take is width the
+   * label needs more. */
+  border-left: 2px solid var(--cal-accent);
+  border-radius: var(--cb-radius-sm);
+  background: color-mix(in srgb, var(--cal-accent) 12%, var(--cb-surface));
+  color: var(--cb-text);
+  /* 0.66rem: two characters per bar smaller than the cell's own type scale, which
+   * is what lets a full label plus its detail fit a two-column desktop cell. */
+  font-size: 0.66rem;
+  line-height: 1.4;
+  /* The label may be clipped, but it must never wrap: a wrapped bar would make
+   * its whole calendar row taller than its neighbours. */
+  white-space: nowrap;
+  overflow: hidden;
+}
+.cal-bar[data-cal-kind="SHIFT"] {
+  --cal-accent: var(--cb-cal-shift);
+}
+.cal-bar[data-cal-kind="OCD"] {
+  --cal-accent: var(--cb-cal-ocd);
+}
+.cal-bar[data-cal-kind="VACATION"] {
+  --cal-accent: var(--cb-cal-vacation);
+}
+.cal-bar[data-cal-kind="SICK"] {
+  --cal-accent: var(--cb-cal-sick);
+}
+.cal-bar[data-cal-kind="FLEX_COMPENSATION"] {
+  --cal-accent: var(--cb-cal-flex);
+}
+.cal-bar[data-cal-kind="SHIFT_COMPENSATION"] {
+  --cal-accent: var(--cb-cal-shiftcomp);
+}
+/* The label truncates before the category word does: the word is the meaning and
+ * the trailing detail (a start time, a half-day extent) is what a narrow cell can
+ * afford to lose. `min-width: 0` on the flex item is what lets it shrink. */
+/* The category word is the MEANING, so it shrinks LAST: `flex-shrink: 1` against
+ * the detail's 20 means the trailing time or extent absorbs almost all of any
+ * shortfall and ellipsizes first. The label only ellipsizes once the detail has
+ * nothing left to give, which keeps the semantic carrier intact at every width —
+ * a truncated time is recoverable from the day panel, a truncated category is
+ * not. */
+.cal-bar-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.cal-bar-detail {
+  flex: 0 20 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--cb-text-soft);
+}
+/* A cancelled or aborted assignment is RETAINED HISTORY, never a plan the
+ * employee still holds (§4.7): it keeps the Shift hue but loses the solid fill
+ * and gains a dashed stripe, so the state is carried by form and by the word
+ * "cancelled", not by colour. Attribute-qualified (0,2,0) so it outranks the
+ * phone's solid-fill rule below regardless of source order. */
+.cal-bar[data-cal-state="cancelled"] {
+  background: var(--cb-surface);
+  border-style: dashed;
+  color: var(--cb-text-soft);
+}
+.cal-bar[data-cal-state="cancelled"] .cal-bar-label {
+  font-weight: 500;
+}
+/* The phone glyph. Hidden at desktop density, where the label carries the
+ * meaning; the phone rules below swap them. */
+.cal-bar-glyph {
+  display: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* The stack of bars. `overflow: hidden` is the guard that keeps a tall stack
+ * inside the cell rather than spilling past its own border. */
+.cal-events {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+  overflow: hidden;
+}
+/* The overflow chip is neutral on purpose: it is not a category, it is a count,
+ * and it must not compete with the bars for hue. */
+.cal-events-more {
+  font-size: 0.68rem;
+  color: var(--cb-text-muted);
+}
+
+/* The calendar panel heading carries a month-level severity badge; it needs a
+ * gap so the heading and the badge never read as one mashed string. */
+.calendar-panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------- day panel */
+
+/* The Year-scoped compensation figures (`compensation_metrics`) are no longer
+ * rendered on the Month page (owner directive, 2026-09-26), so their
+ * `.compensation-summary` styling was removed with them. The server still computes
+ * and sends the figures; whichever surface presents them next owns its own
+ * presentation rather than inheriting a layout nothing renders. */
+
+.day-totals,
+.profile-list {
+  display: grid;
+  /* `auto-fit` with a real minimum, not a fixed column count. Two failures drove
+   * this: a fixed 3-up grid wrapped "CREDITED TO YOUR BALANCE" onto two lines AND
+   * let its value land under a different column's caption (a number that looks
+   * like it belongs to the wrong label), and a 9rem minimum still resolved to 3
+   * columns at the 519px two-column day panel, where the longest caption needs
+   * ~150px and only got ~158 — wrapping by a hair. 12rem is that caption plus its
+   * padding: measured, it holds every caption on one line at every width from 320
+   * to 1920, reflowing 5 -> 4 -> 3 -> 2 columns as the panel narrows. */
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem;
+}
+.day-totals div,
+.profile-list div,
+.review-summary div {
+  display: grid;
+  gap: 0.1rem;
+}
+.day-totals dt,
+.profile-list dt {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block: 0.8rem 0.2rem;
+}
+.quick-action {
+  font-size: 0.85rem;
+  border-radius: var(--cb-radius-sm);
+}
+
+/* Privacy notice: the topics the approved notice must cover, as one list
+ * inside one card — each heading keeps its own line and one statement. */
+.privacy-topics {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.privacy-topics h2 {
+  margin: 0;
+}
+.privacy-topics p {
+  margin: 0.15rem 0 0;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.interval-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.interval-item {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.interval-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.45rem 0.6rem;
+  background: var(--cb-surface);
+}
+.interval-row:hover {
+  border-color: var(--cb-blue-3);
+  background: var(--cb-surface-tint);
+}
+
+.interval-summary {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.9rem;
+  row-gap: 0.15rem;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 0;
+  min-height: 0;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  min-height: 2rem;
+}
+.interval-summary:hover {
+  color: var(--cb-navy);
+}
+.interval-time {
+  font-weight: 700;
+}
+.interval-time .next-day {
+  color: var(--cb-text-soft);
+  font-weight: 500;
+  font-size: 0.85em;
+}
+.interval-type {
+  font-size: 0.9rem;
+}
+.interval-duration {
+  margin-left: auto;
+  color: var(--cb-text-soft);
+}
+.interval-note {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+.row-menu-toggle,
+.menu-toggle {
+  min-width: 2rem;
+  min-height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--cb-radius-sm);
+  border: 0;
+  background: transparent;
+  font-weight: 700;
+  padding-inline: 0.4rem;
+  color: var(--cb-text-soft);
+}
+/* UI-039: the row overflow trigger is the smallest control in the day panel. */
+.row-menu-toggle {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+.menu-toggle[aria-expanded="true"] {
+  background: var(--cb-blue-5);
+}
+
+/* Overflow menu popover (review 2026-09-22): the component computes openUp and
+ * renders .menu-popover-up, so position it instead of letting it flow. Before
+ * this fix there was no .menu-popover rule at all, so the menu rendered as plain
+ * body text and pushed the following content down the page. */
+.more-menu {
+  position: relative;
+}
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 20;
+  min-width: 14rem;
+  /* The last-resort guard for a menu taller than the space on either side of its
+   * trigger: it scrolls rather than running off the viewport, so the destructive
+   * item at the bottom is always reachable. */
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.3rem;
+  background: var(--cb-surface);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  box-shadow: var(--cb-shadow-md);
+}
+.menu-popover-up {
+  top: auto;
+  bottom: calc(100% + 0.25rem);
+}
+.menu-popover > a,
+.menu-popover > button {
+  width: 100%;
+  justify-content: flex-start;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.menu-popover > a:hover,
+.menu-popover > button:hover:not(:disabled) {
+  background: var(--cb-blue-5);
+}
+
+.row-menu-inline {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  border-top: 1px dashed var(--cb-border);
+  padding-top: 0.4rem;
+}
+.row-menu-inline button {
+  border: 1px solid var(--cb-border-strong);
+  background: var(--cb-surface);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  min-height: 2rem;
+  color: var(--cb-navy);
+}
+.row-menu-inline button:hover {
+  background: var(--cb-blue-5);
+}
+
+.break-gap {
+  list-style: none;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--cb-text-muted);
+  border-top: 1px dashed var(--cb-border-strong);
+  padding-top: 0.35rem;
+  margin: 0.1rem 0 0;
+}
+
+/* Finding pin: the SINGLE findings component in the day panel (PHASE-11). */
+.finding-pin {
+  margin-block: 0.6rem;
+}
+.finding-pin summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  background: color-mix(in srgb, var(--cb-blue-5) 45%, white);
+  font-weight: 600;
+}
+.finding-pin summary::-webkit-details-marker {
+  display: none;
+}
+.finding-pin[open] summary {
+  border-color: var(--cb-border-strong);
+  background: var(--cb-blue-5);
+}
+/* Single finding: the summary carries the full message; the repeated detail
+ * list stays in the DOM for assistive tech but is not shown twice visually. */
+.finding-pin.single ul {
+  display: none;
+}
+.finding-pin ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.finding-list {
+  margin-top: 0.9rem;
+}
+.finding-list ul {
+  padding-left: 1.25rem;
+}
+
+/* Interval editor */
+.interval-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.8rem;
+  background: var(--cb-surface);
+}
+.interval-editor legend {
+  font-weight: 700;
+  padding-inline: 0.3rem;
+  color: var(--cb-navy);
+  font-size: 0.95rem;
+}
+.interval-editor label,
+.template-row label,
+.profile-page label,
+.ocd-call-form label,
+.shift-deviation-form label,
+.admin-form-grid label,
+.admin-toolbar label,
+.working-time-form label,
+.preferences label,
+.travel-fields label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+}
+.checkbox-label {
+  align-self: end;
+  display: flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row !important;
+}
+
+.editor-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+.note-field {
+  width: 100%;
+}
+.note-field textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  resize: vertical;
+}
+.note-toggle {
+  font-size: 0.85rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--cb-navy);
+  text-decoration: underline;
+  width: 100%;
+  text-align: left;
+  min-height: 1.5rem;
+}
+.editor-actions {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+}
+.cross-midnight {
+  width: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+}
+/* UI-012: the reason a primary button is disabled, stated where the value was
+ * typed. `.editor-fields` is a wrapping flex row, so a full-width item lands on
+ * its own line directly under the fields it is about. */
+.field-error {
+  width: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--cb-danger);
+}
+/* The requirement a disabled primary is waiting for. Same geometry as
+ * `.field-error` — it must sit on its own line under the control it belongs to —
+ * but a calmer tone: nothing is wrong yet, the form is simply not finished, and
+ * an unmet requirement dressed as a failure teaches people to ignore failures.
+ * Paired with `aria-describedby` on the primary, so a screen-reader user hears
+ * the requirement as part of the control rather than as detached prose. */
+.field-requirement {
+  width: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--cb-text-soft);
+}
+/* The provenance line on an interval that a recorded OCD call created: the
+ * call's own span and travel legs. Derived data, not the employee's own note, so
+ * it is not italic like `.interval-note`. */
+.interval-provenance {
+  font-style: normal;
+}
+.fold-choice {
+  font-size: 0.85rem !important;
+}
+.fold-choice select {
+  min-height: 2.1rem;
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.4rem 0.55rem;
+  background: var(--cb-surface);
+  color: var(--cb-text);
+  min-height: 2.3rem;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--cb-orange);
+}
+input[type="checkbox"] {
+  min-height: 1.05rem;
+  accent-color: var(--cb-navy);
+  width: 1.05rem;
+}
+
+/* Deterministic date/time text fields (PHASE-11 F09): compact widths so a
+ * 16-char datetime value does not stretch its form row. */
+input.time-field {
+  max-width: 8ch;
+}
+input.date-field {
+  max-width: 12ch;
+}
+input.month-field {
+  max-width: 9ch;
+}
+input.datetime-field {
+  max-width: 17ch;
+}
+
+/* A moment on the row's own day (lib/inputs.tsx `MomentField`): the input holds
+ * either "HH:MM" or the full 16-char datetime, so it keeps the datetime width and
+ * the row does not reflow when the employee states a date. */
+input.moment-field {
+  max-width: 17ch;
+}
+
+/* Balance card: keeps its shape while the balance query resolves (vision
+ * round — no mid-load collapse / dead space on the first demo screen). */
+.dashboard-balance-card {
+  min-height: 12.5rem;
+  align-content: start;
+}
+.dashboard-grid {
+  /* balance card + quick access; the minimums keep both readable on laptops
+   * and collapse to one column on phones (media rule below) */
+  grid-template-columns: minmax(16rem, 1fr) minmax(20rem, 1.4fr);
+}
+.balance {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cb-navy);
+  margin: 0.2rem 0;
+}
+.balance-placeholder {
+  color: var(--cb-text-muted);
+}
+
+/* ------------------------------------------------------------ profile */
+
+.profile-page {
+  display: grid;
+  gap: 1rem;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2fr) minmax(26rem, 5fr);
+  align-items: start;
+}
+.profile-grid > section {
+  flex: 1;
+}
+/* The page is two columns: the narrow one for reference facts, the wide one for
+ * the surface the employee actually works in. The setup surface — the onboarding
+ * card OR the working-time editor, whichever is present — always belongs in the
+ * wide column. Without this the editor lands in the NARROW column as soon as
+ * both cards are on the page (auto-placement is row-major), and its 7-column
+ * weekday grid then overflows its own cells. */
+.profile-grid > .onboarding,
+.profile-grid > .working-time {
+  grid-column: 2;
+}
+.profile-list {
+  grid-template-columns: 1fr 1fr;
+}
+.preferences {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  /* UI-022: this card sat at 46rem under a full-width two-card row, leaving a
+   * ~630px void beside it at 1440. It now spans the row it sits under; the
+   * fields inside keep their own measure. */
+}
+.preferences label {
+  max-width: 24rem;
+}
+.working-time {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+.working-time-current {
+  font-size: 0.95rem;
+}
+.working-time-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.working-time-form label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+.working-time-form input {
+  font-variant-numeric: tabular-nums;
+}
+.working-day-picker,
+.balance-direction,
+.election-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.5rem 0.6rem;
+  margin: 0.25rem 0;
+  max-width: 52rem;
+}
+.working-day-picker legend,
+.balance-direction legend,
+.election-picker legend {
+  font-size: 0.8rem;
+  color: var(--cb-text-muted);
+  padding-inline: 0.3rem;
+}
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  max-width: 52rem;
+}
+.weekday-cell {
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.5rem;
+  background: var(--cb-surface);
+}
+.weekday-cell label {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+}
+.weekday-cell input {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.weekday-cell:has(input:disabled) {
+  opacity: 0.55;
+}
+.weekday-actions {
+  min-height: 1.6rem;
+}
+.weekday-actions button {
+  font-size: 0.78rem;
+  min-height: 1.6rem;
+  padding-inline: 0.4rem;
+}
+.weekday-error {
+  margin: 0;
+  font-size: 0.75rem;
+}
+/* The one-time Chronobeam start. Same card/gap rhythm as `.working-time`, and
+ * the three top-level groups are the three concepts the employee must not have
+ * to disentangle — so they are separated by space, not by another container. */
+.onboarding {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+.onboarding form {
+  display: grid;
+  gap: 1rem;
+}
+.onboarding > form > fieldset {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.7rem 0.8rem;
+}
+.onboarding > form > fieldset > legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cb-text);
+  padding-inline: 0.3rem;
+}
+.onboarding label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  max-width: 24rem;
+}
+.onboarding input {
+  font-variant-numeric: tabular-nums;
+}
+.onboarding .correction {
+  display: grid;
+  gap: 0.5rem;
+}
+.onboarding .correction label {
+  max-width: 32rem;
+}
+.onboarding .correction label input {
+  width: 100%;
+}
+.working-time-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+.working-time-totals,
+.balance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.working-time-totals span,
+.balance-summary span {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 6.5rem;
+}
+.suggestion {
+  font-size: 0.9rem;
+  margin: 0.1rem 0;
+}
+.working-time-note {
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+  max-width: 60ch;
+  margin: 0;
+}
+.template-editor,
+.template-row {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.template-row {
+  grid-template-columns: repeat(4, max-content);
+  align-items: end;
+}
+
+/* ------------------------------------------------------------- special work */
+
+.shift-card {
+  border-top: 1px solid var(--cb-border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.shift-card h2,
+.shift-card h3,
+.shift-card h4 {
+  margin: 0;
+}
+/* UI-056: the assignment and list headings are h2 so the page's heading order is
+ * h1 -> h2 with no skipped level; they keep the smaller card-heading size. */
+.shift-card h2 {
+  font-size: 1.02rem;
+}
+/* Promoted from h4 for the same reason; it keeps the size that level had. */
+.shift-card h3.calls-heading {
+  font-size: 0.95rem;
+}
+.shift-times {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.shift-times div {
+  display: grid;
+  gap: 0.1rem;
+}
+.shift-times dt {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+/* The assignment's linked paid breaks, listed under the status they produced.
+ * A plain list with no marker box: these are read-only facts here, and the
+ * day timeline is where one is corrected or removed. */
+.paid-break-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+  list-style: none;
+}
+.paid-break-list li::before {
+  content: "•";
+  margin-right: 0.5ch;
+  color: var(--cb-text-soft);
+}
+.shift-deviation-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-block: 1rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.8rem;
+  background: var(--cb-surface-tint);
+}
+/* `h4`, the primary button, `.wide-field` and any explanatory note span the whole
+ * form: the note beside a field is about the FORM's requirement, not about the
+ * half-column it happens to sit next to. */
+.shift-deviation-form h4,
+.shift-deviation-form button,
+.shift-deviation-form .private-note,
+.wide-field {
+  grid-column: 1 / -1;
+}
+.shift-deviation-form textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+.shift-findings {
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.ocd-card {
+  margin-top: 1rem;
+}
+.ocd-calls {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ocd-call {
+  border-left: 3px solid var(--cb-blue-3);
+  padding-left: 0.6rem;
+}
+.ocd-call p {
+  margin: 0.15rem 0;
+}
+.ocd-duration {
+  font-variant-numeric: tabular-nums;
+  color: var(--cb-text-soft);
+}
+.ocd-call-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-block: 0.75rem;
+  border-top: 1px dashed var(--cb-border);
+  padding-top: 0.75rem;
+}
+.ocd-call-form > button,
+.ocd-call-form .wide-field {
+  grid-column: 1 / -1;
+}
+.ocd-call-form textarea {
+  min-height: 3.5rem;
+  resize: vertical;
+}
+.election-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block: 0.4rem;
+}
+
+.ot-auth {
+  list-style: none;
+  margin-block: 0.5rem;
+}
+.ot-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+  margin-block: 0.4rem;
+}
+.ot-link-row label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  min-width: 16rem;
+}
+
+/* Human label chips for policy provenance (PHASE-11): codes live behind a
+ * collapsed "Policy details" region. */
+.tech-details {
+  margin-block: 0.6rem;
+}
+/* .tech-details summary is styled with .shift-findings-details summary in the
+ * shared disclosure rule above (review 2026-09-22). */
+.tech-details ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--cb-text-soft);
+}
+
+/* ------------------------------------------------------------- travel */
+
+.travel-page {
+  display: grid;
+  gap: 0.9rem;
+}
+.travel-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.travel-month-nav a {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  color: var(--cb-navy);
+  background: var(--cb-surface);
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+}
+.travel-month-nav a:hover {
+  background: var(--cb-blue-5);
+}
+.travel-note {
+  font-size: 0.9rem;
+  color: var(--cb-text-soft);
+  margin: 0.2rem 0 0;
+}
+.travel-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.travel-finding {
+  font-size: 0.9rem;
+  border-left: 3px solid var(--cb-blue-3);
+  padding: 0.3rem 0.6rem;
+  background: var(--cb-surface);
+  border-radius: 0 var(--cb-radius-sm) var(--cb-radius-sm) 0;
+}
+.travel-finding-warning {
+  border-left-color: var(--cb-danger);
+}
+.travel-trip-list {
+  display: grid;
+  gap: 0.9rem;
+}
+.travel-trip-card {
+  display: grid;
+  gap: 0.55rem;
+}
+.travel-trip-card header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.travel-trip-card h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.travel-label,
+.travel-origin {
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+}
+.travel-threshold {
+  border-top: 1px dashed var(--cb-border);
+  padding-top: 0.5rem;
+}
+.travel-threshold-heading {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.travel-progress {
+  margin: 0.15rem 0 0.4rem;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.travel-credit-calc {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.3rem 0.8rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+}
+.travel-credit-calc div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-top: 1px solid var(--cb-border);
+  padding-top: 0.25rem;
+}
+.travel-credit-calc dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  /* The value is the datum: let the LABEL wrap instead of breaking a date or
+   * a duration across two lines. */
+  white-space: nowrap;
+}
+.travel-credit-calc dt {
+  min-width: 0;
+  /* UI-035: a fixed measure keeps every label at the same number of lines, so
+   * the five values sit on one baseline. */
+  max-width: 11ch;
+}
+.travel-credit-value {
+  font-weight: 700;
+}
+.travel-segments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.travel-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.92rem;
+}
+.travel-segment-day {
+  font-weight: 600;
+}
+.travel-segment-time,
+.travel-duration {
+  font-variant-numeric: tabular-nums;
+}
+.travel-qualifier {
+  color: var(--cb-text-muted);
+  font-size: 0.85rem;
+}
+.travel-linked {
+  font-size: 0.85rem;
+}
+.travel-empty {
+  color: var(--cb-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.travel-form {
+  border: 1px dashed var(--cb-border-strong);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+  background: var(--cb-surface);
+}
+.travel-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+.travel-fields label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+.travel-wide-field {
+  flex: 1 1 18rem;
+}
+.travel-checkbox {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  font-size: 0.9rem;
+  flex-direction: row !important;
+}
+.travel-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.travel-topups ul,
+.travel-credits ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+}
+/* One credit per row, read as fields (day / amount / basis) rather than as a
+ * sentence: the same shape as a travel segment. */
+.travel-topups li,
+.travel-credits li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.travel-credit-day {
+  min-width: 6.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.travel-credit-amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.travel-credit-basis {
+  color: var(--cb-text-soft);
+}
+
+/* ------------------------------------------------------- submissions/share */
+
+.submissions-page {
+  max-width: var(--content-wide, 80rem);
+}
+.submission-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.submission-card {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+}
+.submission-card h2,
+.submission-card h3 {
+  margin: 0;
+}
+/* UI-043: the preview is its own full-width panel BELOW the card grid. It needs
+ * the reading width, and inside a card it reflowed the two-column grid and moved
+ * the neighbouring cards. The slot is empty when no preview is open. */
+.preview-slot {
+  display: grid;
+  gap: 1rem;
+}
+.preview-panel {
+  margin-top: 1rem;
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  background: var(--cb-surface);
+  box-shadow: var(--cb-shadow-sm);
+  padding: 1.1rem 1.25rem;
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+}
+.preview-panel h3 {
+  margin: 0;
+}
+/* The effective-work span of an on-call duty call: a second, quieter line under
+ * the call window, because the two describe different periods. */
+.preview-call-span {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--cb-text-soft);
+}
+.submission-card > label,
+.hr-request-panel form label,
+.granted-view-loader label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+.recipient-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  align-items: center;
+}
+.recipient-picker span {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.recipient-picker label {
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* The card carrying an open preview spans the full grid width: the privacy
+ * preview reads as one full-width panel below the two-column grid. */
+.submission-card:has(.human-preview) {
+  grid-column: 1 / -1;
+}
+.payload-preview {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+.payload-preview div {
+  border-top: 1px solid var(--cb-border);
+  padding-top: 0.35rem;
+}
+.payload-preview dt {
+  font-weight: 600;
+  text-transform: none;
+}
+.payload-preview dd {
+  margin: 0.15rem 0;
+  overflow-wrap: anywhere;
+}
+.payload-preview pre,
+.recipient-detail pre,
+.frozen-view pre {
+  overflow: auto;
+  max-height: 22rem;
+  background: var(--cb-surface-tint);
+  padding: 0.55rem;
+  font-size: 0.78rem;
+  font-family: var(--cb-mono);
+  border-radius: var(--cb-radius-sm);
+}
+
+.package-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.package-list li {
+  border-left: 3px solid var(--cb-navy);
+  padding: 0.5rem 0.75rem;
+  background: var(--cb-surface);
+  border-radius: 0 var(--cb-radius-sm) var(--cb-radius-sm) 0;
+}
+.package-list button {
+  margin: 0.4rem 0 0 0.5rem;
+}
+/* UI-020: the recipient queue scans down columns — purpose, period, reference,
+ * status, action — instead of reading a prose line per package. */
+.queue-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.1fr) minmax(0, 0.8fr) minmax(0, 1.3fr)
+    minmax(0, 0.9fr) auto;
+  align-items: center;
+  gap: 0.3rem 0.9rem;
+}
+.queue-row .queue-period,
+.queue-row .queue-reference,
+.queue-row .queue-status {
+  font-size: 0.88rem;
+  color: var(--cb-text-soft);
+}
+.queue-row .queue-status {
+  font-variant-numeric: tabular-nums;
+}
+.queue-row button {
+  margin: 0;
+  justify-self: end;
+}
+@media (max-width: 700px) {
+  .queue-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .queue-row .queue-purpose {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  /* The detail lines take the whole row: at 390 a half-width column broke the
+   * employee reference across two lines mid-token. */
+  .queue-row .queue-period,
+  .queue-row .queue-reference,
+  .queue-row .queue-status {
+    grid-column: 1 / -1;
+  }
+  .queue-row button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.hr-request-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+.hr-request-panel form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.hr-request-panel form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+.hr-request-panel form label input {
+  width: 100%;
+}
+.hr-request-panel form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.granted-view-loader {
+  display: grid;
+  gap: 0.5rem;
+  border-top: 1px solid var(--cb-border);
+  padding-top: 0.75rem;
+}
+
+.empty-state {
+  color: var(--cb-text-muted);
+  font-size: 0.9rem;
+  margin: 0.2rem 0;
+}
+
+/* Active filter pills (recipient queue): navy fill, matching the admin tabs
+ * and month-context navigation (vision round). */
+.recipient-queue .workspace-actions button[aria-pressed="true"] {
+  background: var(--cb-navy);
+  border-color: var(--cb-navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Technical detail disclosures (PHASE-11 F15/F22): engine codes and raw
+ * payloads live behind collapsed details, never in the primary view. */
+.tech-details {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  border-top: 1px dashed var(--cb-border);
+  padding-top: 0.5rem;
+}
+.tech-details pre {
+  max-width: var(--content-reading, 52rem);
+  overflow: auto;
+  font-family: var(--cb-mono);
+  font-size: 0.78rem;
+  background: var(--cb-surface-tint);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.6rem;
+}
+.frozen-daily {
+  border-collapse: collapse;
+  margin-block: 0.6rem;
+  font-size: 0.92rem;
+}
+.frozen-daily th,
+.frozen-daily td {
+  text-align: left;
+  padding: 0.25rem 0.9rem 0.25rem 0;
+  border-bottom: 1px solid var(--cb-border);
+}
+.frozen-daily th {
+  color: var(--cb-text-soft);
+  font-weight: 550;
+}
+.frozen-intervals {
+  margin: 0.4rem 0;
+  padding-left: 1.25rem;
+}
+
+/* Standalone card for bare pages (access requests, denied states, limited
+ * personas): every surface sits on a white card, never floating on canvas. */
+.standalone-card {
+  background: var(--cb-surface);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  box-shadow: var(--cb-shadow-sm);
+  padding: 1.1rem 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+.access-denied {
+  border-color: var(--cb-blue-3);
+}
+.denied-message {
+  color: var(--cb-danger);
+  font-weight: 600;
+  margin: 0;
+}
+/* ------------------------------------------------------------- admin */
+
+.admin-page {
+  max-width: var(--content-wide, 80rem);
+}
+.admin-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-block: 0.75rem 1rem;
+}
+.admin-tab {
+  border: 1px solid var(--cb-border-strong);
+  border-radius: var(--cb-radius-pill);
+  padding: 0.4rem 0.95rem;
+  background: var(--cb-surface);
+  color: var(--cb-navy);
+  font-size: 0.9rem;
+  font-weight: 550;
+}
+.admin-tab:hover {
+  background: var(--cb-blue-5);
+}
+.admin-tab[aria-selected="true"],
+.admin-tab.active {
+  background: var(--cb-navy);
+  color: #fff;
+  font-weight: 600;
+  border-color: var(--cb-navy);
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: end;
+  margin-bottom: 0.9rem;
+}
+.admin-toolbar label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+.admin-search {
+  display: grid;
+  gap: 0.2rem 0.45rem;
+  /* UI-021: a search box that grew to ~940px read as a page-wide field; it now
+   * takes the measure its content needs. */
+  flex: 0 1 28rem;
+  max-width: 28rem;
+}
+.admin-search-row {
+  display: flex;
+  gap: 0.45rem;
+  flex: 1 1 15rem;
+  /* Same trap as the input below, one level up: without this the row's
+   * min-content (field + button) kept the search form 331px wide and pushed the
+   * page past a 320px viewport (WCAG 2.2 SC 1.4.10 reflow). */
+  min-width: 0;
+}
+.admin-search-row input[type="search"],
+.admin-search-row input {
+  flex: 1 1 15rem;
+  /* A flex item's automatic minimum is its min-content, which kept the field ~250px
+   * wide and pushed the page past a 320px viewport. */
+  min-width: 0;
+}
+.admin-search button {
+  min-height: 2.25rem;
+}
+
+/* UI-021: the user list is tabular data. It uses the app's existing table
+ * treatment and tight rows, so ten accounts fit one screen instead of two. */
+.admin-user-list-wrap {
+  /* A six-column table is wider than a phone; it scrolls inside its own
+   * container instead of stretching the page (the ancestor min-content trap). */
+  overflow-x: auto;
+  min-width: 0;
+}
+.admin-user-list {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 1.1rem;
+  font-size: 0.9rem;
+}
+.admin-user-list th,
+.admin-user-list td {
+  text-align: left;
+  padding: 0.3rem 0.9rem 0.3rem 0;
+  border-bottom: 1px solid var(--cb-border);
+  vertical-align: middle;
+}
+.admin-user-list th {
+  color: var(--cb-text-soft);
+  font-weight: 550;
+  font-size: 0.8rem;
+  /* A column label is one value, like the instant below it: "Employee ID" must not
+   * break into two lines, which it did once the Readiness column took width from
+   * this one. Measured at a 1280px viewport: table 1240px, wrapper 1240px, no
+   * horizontal scroll — the wrapper takes the overflow if it ever needs to. */
+  white-space: nowrap;
+}
+.admin-user-list .admin-user-name {
+  color: var(--cb-navy);
+  font-weight: 650;
+}
+.admin-user-list .admin-user-provisioned {
+  font-size: 0.82rem;
+  color: var(--cb-text-soft);
+  /* Tabular figures: a column of instants should line up digit for digit. */
+  font-variant-numeric: tabular-nums;
+  /* …and one instant is one value: it must not break between its date and its
+   * time, which is what happened once the Readiness column took width from this
+   * one and doubled the height of every row. The wrapper scrolls if the table
+   * genuinely cannot fit. */
+  white-space: nowrap;
+}
+/* The Role column is access vocabulary, not prose: quieter than the name, so the
+ * eye can scan it without it competing with the identity columns. */
+.admin-user-list .admin-user-roles {
+  font-size: 0.82rem;
+  color: var(--cb-text-soft);
+}
+/* A sortable header is a button so the column is operable from the keyboard and
+ * announces itself as a control — but it must carry the HEADER's type, not the
+ * generic button's pill. The generic rule excludes `.sort-header` (see its
+ * comment); this restates the type the cell would otherwise have. */
+.admin-user-list .sort-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 550;
+  cursor: pointer;
+}
+.admin-user-list .sort-header:hover {
+  color: var(--cb-navy);
+}
+.admin-user-list .sort-chevron {
+  width: 0.6rem;
+  height: 0.4rem;
+  flex: none;
+}
+/* The column in force reads navy, the same accent the row's own name takes. */
+.admin-user-list th[aria-sort="ascending"] .sort-header,
+.admin-user-list th[aria-sort="descending"] .sort-header {
+  color: var(--cb-navy);
+}
+.admin-user-list td:last-child {
+  text-align: right;
+  padding-right: 0;
+}
+/* The row toggle is a toggle, so its selected state is `aria-pressed="true"`
+ * (acceptance A3). The generic secondary-button rule above deliberately
+ * excludes `[aria-pressed="true"]` — a pressed button is meant to take the
+ * active-pill treatment instead — and this table supplies no other geometry, so
+ * the pressed state restates it here. Same navy pill as the admin tabs and the
+ * recipient-queue filters. */
+.admin-user-list button[aria-pressed="true"] {
+  border: 1px solid var(--cb-navy);
+  border-radius: var(--cb-radius-sm);
+  padding: 0.42rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  background: var(--cb-navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.6rem 0.9rem;
+}
+.admin-detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.4rem 0.9rem;
+  margin: 0 0 0.8rem;
+}
+.admin-detail-list div {
+  display: grid;
+  gap: 0.1rem;
+}
+.admin-detail-list dt {
+  color: var(--cb-text-muted);
+}
+.admin-detail-list dd {
+  margin: 0;
+}
+/* A2 (acceptance ledger, §1): an operator-supplied value must wrap inside its
+ * own column. Measured live before this rule — the user detail card's Email
+ * cell rendered 285 px of text in a 229.7 px cell, so its right edge (566.3)
+ * crossed the Identity-subject column's left edge (525.2) by 41 px. All three
+ * admin grids share the same `minmax(14rem, 1fr)` template, so all three carry
+ * the same latent overflow, and all three render values the operator does not
+ * control (a legal name, an email, an identity subject, an integration key).
+ * `anywhere`, not `break-word`, is the file's idiom for this (`.payload-preview
+ * dd`, `.interval-note`): only `anywhere` also shrinks the element's min-content
+ * contribution, so the value can no longer widen or spill out of its track.
+ * `overflow-wrap` inherits, so one declaration per grid covers its children. */
+.admin-form-grid,
+.admin-integration-list,
+.admin-edition-list .admin-edition-source,
+.admin-detail-list dd {
+  overflow-wrap: anywhere;
+}
+.admin-role-list,
+.admin-cap-list,
+.admin-integration-list {
+  list-style: none;
+  margin: 0.4rem 0 0.8rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.admin-role-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  align-items: center;
+}
+.admin-role-list span {
+  color: var(--cb-text-muted);
+  font-size: 0.85rem;
+}
+.admin-cap-list li {
+  font-family: var(--cb-mono);
+  font-size: 0.82rem;
+  color: var(--cb-text-soft);
+}
+.admin-integration-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  align-items: baseline;
+}
+.admin-assign-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+}
+.admin-assign-controls {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.admin-assign-controls label {
+  font-size: 0.85rem;
+}
+.admin-account-actions {
+  margin-top: 0.4rem;
+}
+.admin-system {
+  display: grid;
+  gap: 1rem;
+}
+.admin-system-card p {
+  margin: 0.25rem 0;
+}
+/* A grid item's automatic minimum is its min-content, so the card would take the
+ * edition table's 32rem floor and push the whole page wider than a phone. This lets
+ * the card shrink and hand the overflow to the table's own scroll container. */
+.admin-system-card {
+  min-width: 0;
+}
+/* The coverage verdict is the card's finding: it carries weight, not only hue, so it
+ * outranks the prose around it without becoming an alarm. */
+.admin-system-card .coverage-gap {
+  font-weight: 650;
+}
+/* The published calendar editions are tabular data — one row per edition, three
+ * relationships a reader scans down — so they are a table, in the same tight
+ * treatment as the users list, and behind the same horizontal-scroll container: a
+ * table narrower than its content scrolls rather than shredding a cell. */
+.admin-edition-list-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+.admin-edition-list {
+  border-collapse: collapse;
+  width: 100%;
+  /* A floor, so the container scrolls instead of squeezing three columns into a
+   * phone: without it the cells shrink to a few characters each and a single row
+   * grows to 345px. */
+  min-width: 32rem;
+  margin: 0.5rem 0 0.9rem;
+  font-size: 0.88rem;
+}
+/* The caption names the table, so it reads above the column headers rather than as
+ * one more of them: darker than the header row, on its own line. */
+.admin-edition-list caption {
+  text-align: left;
+  color: var(--cb-text);
+  font-weight: 650;
+  font-size: 0.8rem;
+  padding-bottom: 0.3rem;
+}
+.admin-edition-list th,
+.admin-edition-list td {
+  text-align: left;
+  padding: 0.3rem 0.9rem 0.3rem 0;
+  border-bottom: 1px solid var(--cb-border);
+  vertical-align: top;
+}
+.admin-edition-list th {
+  color: var(--cb-text-soft);
+  font-weight: 550;
+  font-size: 0.8rem;
+}
+/* The edition label is the row's identity, so it takes the same weight the users
+ * list gives a name; the range stays tabular and unbroken, because a range split
+ * across two lines stops reading as a range. */
+.admin-edition-list .admin-edition-version {
+  color: var(--cb-navy);
+  font-weight: 650;
+}
+.admin-edition-list .admin-edition-range {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.admin-edition-list .admin-edition-source {
+  color: var(--cb-text-soft);
+  font-size: 0.82rem;
+}
+.admin-identity-mapping {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.admin-identity-mapping label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  max-width: 26rem;
+}
+
+/* ------------------------------------------------------------------ misc */
+
+.review-page {
+  display: grid;
+  gap: 0.9rem;
+}
+.review-summary {
+  align-items: stretch;
+  margin-block: 1rem;
+}
+.review-summary > div {
+  border-left: 3px solid var(--cb-navy);
+  padding-left: 0.5rem;
+}
+.review-summary dt {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.review-actions {
+  display: grid;
+  gap: 0.7rem;
+  align-items: start;
+  justify-items: start;
+  border-top: 1px solid var(--cb-border);
+  padding-top: 0.9rem;
+  margin-top: 0.9rem;
+}
+.review-actions .checkbox-label {
+  align-self: start;
+  max-width: 46rem;
+}
+
+.preview {
+  margin-block: 1rem;
+}
+
+/* Skeleton loading (PHASE-11 F27): keeps layout while data loads; the
+ * accessible status text remains in the DOM (aria-hidden blocks). */
+.skeleton {
+  display: grid;
+  gap: 0.8rem;
+}
+.skeleton .sk-row {
+  height: 0.9rem;
+  border-radius: var(--cb-radius-sm);
+  background: linear-gradient(90deg, var(--cb-blue-5) 25%, #dbe6ef 50%, var(--cb-blue-5) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.3s infinite linear;
+}
+.skeleton .sk-row.sk-w-18 {
+  width: 18rem;
+}
+.skeleton .sk-row.sk-w-30 {
+  width: 30rem;
+}
+.skeleton .sk-row.sk-w-22 {
+  width: 22rem;
+}
+.skeleton .sk-cell {
+  height: 5.4rem;
+  border-radius: var(--cb-radius-sm);
+  background: linear-gradient(90deg, var(--cb-blue-5) 25%, #dbe6ef 50%, var(--cb-blue-5) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.3s infinite linear;
+}
+@keyframes sk-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ------------------------------------------------------------- responsive */
+
+/* The workspace stacks earlier than 700px now that a cell carries labelled event
+ * bars. The threshold is MEASURED, not chosen: a bar has to fit its longest label
+ * ("Shift cancelled", 78px) plus its own chrome, which needs a cell of about
+ * 100px, which needs a calendar column of about 775px — and the column is 1.6fr of
+ * a 1.6fr/1fr split, so the two-column layout only pays for itself from about
+ * 1280px. Below it the calendar takes the full row (about 168px per cell at
+ * 1200px) and every label sits whole; the day panel moves underneath, which is the
+ * layout a laptop user scrolls anyway. */
+@media (max-width: 1280px) {
+  .workspace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .submission-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  main {
+    padding: 0.8rem;
+  }
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+  }
+  /* UI-005: the nav wrapped to three rows inside a sticky header, so ~219px of
+   * chrome sat above the content. It is a menu on a phone: closed unless the
+   * toggle above asked for it. */
+  .nav-toggle {
+    display: inline-flex;
+    min-height: 2.75rem;
+  }
+  .app-header nav {
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    order: 3;
+    flex-basis: 100%;
+  }
+  .app-header nav:not([data-open="true"]) {
+    display: none;
+  }
+  .app-brand img {
+    max-width: 10rem;
+    height: 1.9rem;
+  }
+  .identity-chip {
+    margin-left: auto;
+  }
+  .workspace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .day-cell {
+    /* UI-037's fixed 4rem height is retired: the cell now carries an event-bar
+     * stack whose height varies with the day, and a FIXED height is exactly what
+     * spills content past a cell's own border. `min-height` cannot spill, and the
+     * grid's default `align-items: stretch` already gives every cell in a row the
+     * same height, so rows stay even without pinning a number. 4.5rem covers
+     * number + two bars + delta at the phone density below. */
+    min-height: 4.5rem;
+    padding: 0.25rem;
+    gap: 0.1rem;
+  }
+  /* Phone density is a DIFFERENT encoding, not a shrunk desktop one: the bar
+   * becomes a solid accent fill with a two-letter glyph, so the category is
+   * legible in a ~35px cell where no label could fit. */
+  .cal-bar {
+    justify-content: center;
+    padding: 0.06rem 0.12rem;
+    border-color: transparent;
+    border-left-width: 0;
+    border-radius: 3px;
+    background: var(--cal-accent);
+    color: #fff;
+    font-size: 0.6rem;
+  }
+  .cal-bar-label,
+  .cal-bar-detail {
+    display: none;
+  }
+  .cal-bar-glyph {
+    display: inline;
+  }
+  .cal-events {
+    gap: 0.08rem;
+  }
+  .cal-events-more {
+    font-size: 0.58rem;
+    text-align: center;
+  }
+  /* UI-003: the finding is the employee-first warning, and it was the one thing
+   * that disappeared on a phone. The word stays in the DOM (the cell's accessible
+   * name carries it) and renders as a severity GLYPH. The glyph's FORM differs by
+   * severity - a solid dot for WARNING, a hollow ring for CRITICAL/BLOCKED - so
+   * severity is not carried by colour alone, and neither form can be mistaken for
+   * the structural maroon, which paints a background wash and the date number
+   * rather than a corner glyph.
+   *
+   * `font-size: 0`, NOT `text-indent: -9999px`. The indent idiom silently failed
+   * here: `text-indent` only indents a block container's FIRST line box, and the
+   * block-level `::before` below already occupies that one, so the word fell into a
+   * second, unindented line box and painted over the cell's neighbours. Collapsing
+   * the font removes the word from layout without relying on which line box it
+   * lands in, and keeps it in the DOM for assistive technology. */
+  .day-cell .cell-finding {
+    font-size: 0;
+    line-height: 0;
+    height: 0.6rem;
+    overflow: hidden;
+  }
+  .day-cell .cell-finding::before {
+    content: "";
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: 0.05rem auto 0;
+    border-radius: var(--cb-radius-pill);
+    background: currentColor;
+  }
+  .day-cell .cell-finding.severity-critical::before,
+  .day-cell .cell-finding.severity-blocked_policy::before {
+    background: transparent;
+    border: 2px solid currentColor;
+  }
+  .day-cell .cell-delta {
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .day-totals {
+    /* The column rule is NOT overridden here any more. Measured, "Credited to your
+     * balance" is 183px wide at this type scale, so a narrower minimum made the
+     * caption wrap at exactly the widths a phone uses; the base `12rem` minimum
+     * already reflows 3 -> 2 -> 1 column as the panel narrows, which is the right
+     * answer at every width and one rule instead of two. Only the gap tightens. */
+    gap: 0.4rem;
+  }
+  .profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* One column here, so the wide-column placement above must not create an
+   * implicit second one. */
+  .profile-grid > .onboarding,
+  .profile-grid > .working-time {
+    grid-column: 1 / -1;
+  }
+  .template-row,
+  .shift-deviation-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .weekday-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .working-time-totals {
+    gap: 0.6rem;
+  }
+  h1 {
+    font-size: 1.35rem;
+  }
+  .month-context {
+    gap: 0.35rem;
+  }
+  .month-context .month-sep {
+    display: none;
+  }
+  /* UI-005: the section tabs wrapped to four rows. They are one row that
+   * scrolls; the next tab is deliberately cut off at the right edge, because a
+   * hidden scrollbar removes the only other cue that the row continues (no
+   * gradient or overlay — §1.2 forbids them). The stepper keeps its own row
+   * above, so it is reachable without scrolling. */
+  .month-steps {
+    flex: 1 1 100%;
+  }
+  .month-sections {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .month-sections::-webkit-scrollbar {
+    display: none;
+  }
+  .month-sections .month-step {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .travel-fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  /* PHASE-11 F08: the flexible reference field must not stretch into a
+   * ~280px tall control when the form stacks on phones. */
+  .travel-wide-field {
+    flex: none;
+    width: 100%;
+  }
+  .travel-segment {
+    gap: 0.35rem;
+  }
+  .shift-deviation-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile-wide interactive size: 44px-class targets outside the day panel too
+ * (PHASE-11 F23): header links, buttons, selects and inputs. */
+@media (max-width: 700px) {
+  .app-header nav a {
+    min-height: 2.75rem;
+  }
+  .app-brand {
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+  }
+  .workspace-actions a,
+  .workspace-actions button:not(.menu-toggle),
+  .quick-action,
+  .more-menu .menu-toggle,
+  button.primary,
+  .add-interval,
+  .danger-ghost,
+  .month-context .month-step,
+  .travel-month-nav a,
+  .admin-tab,
+  .day-panel input,
+  .day-panel select,
+  .day-panel textarea,
+  .day-panel button:not(.interval-summary):not(.note-toggle):not(.menu-toggle),
+  .day-panel .menu-toggle,
+  input,
+  select,
+  textarea {
+    min-height: 2.75rem;
+  }
+  .day-panel button.interval-summary {
+    min-height: 2.4rem;
+  }
+  .day-panel button.note-toggle {
+    min-height: 2rem;
+  }
+  .interval-row {
+    padding: 0.5rem 0.55rem;
+  }
+  .workspace-actions {
+    gap: 0.5rem;
+  }
+}
+
+/* Motion (Slice 10, owner's polish request). Every declaration below is
+ * ADDITIVE: this file had no `transition` at all, and the block only adds one —
+ * it names existing product hooks and restates no colour, spacing, radius or
+ * layout value, so no component is restyled. Only paint/composite properties are
+ * listed (opacity, transform, colour, background, border, shadow): width,
+ * height, margin, top and left are never transitioned, so nothing reflows
+ * mid-interaction — in particular the calendar grid's track sizing stays
+ * instant, and no cell can resize under the pointer. One duration and one
+ * easing, both from the token block in :root. */
+button,
+a,
+input,
+select,
+textarea,
+summary,
+.interval-row,
+.finding-pin,
+.interval-editor,
+.day-status-form,
+.shift-deviation-form,
+.ocd-call-form,
+.travel-form,
+.template-editor,
+.menu-popover,
+.row-menu-inline,
+.action-notice,
+.session-expired-notice,
+.travel-segment,
+.queue-row,
+.package-list li,
+.travel-trip-card,
+.submission-card,
+.ocd-card,
+.shift-card,
+.standalone-card {
+  transition:
+    opacity var(--cb-motion) var(--cb-motion-ease),
+    transform var(--cb-motion) var(--cb-motion-ease),
+    color var(--cb-motion) var(--cb-motion-ease),
+    background-color var(--cb-motion) var(--cb-motion-ease),
+    border-color var(--cb-motion) var(--cb-motion-ease),
+    box-shadow var(--cb-motion) var(--cb-motion-ease);
+}
+
+/* Appearance: a panel, notice, row or card that is inserted fades in instead of
+ * snapping — that is also what carries the skeleton-to-content hand-off, since
+ * the arriving content is a fresh element. `@starting-style` supplies the
+ * just-rendered element's starting values, so the ordinary transition above
+ * animates it: no keyframes and no second duration to keep in sync. A browser
+ * without `@starting-style` simply renders the element directly.
+ * ceiling: closing unmounts the panel, and CSS cannot animate an unmount
+ * without JS holding the node; the panel disappears instantly. Add an exit
+ * transition only if the panel ever becomes state-driven rather than conditional. */
+@starting-style {
+  .interval-editor,
+  .day-status-form,
+  .shift-deviation-form,
+  .ocd-call-form,
+  .travel-form,
+  .template-editor,
+  .menu-popover,
+  .row-menu-inline,
+  .action-notice,
+  .session-expired-notice,
+  .travel-segment,
+  .queue-row,
+  .package-list li,
+  .travel-trip-card,
+  .submission-card,
+  .ocd-card,
+  .shift-card,
+  .standalone-card {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+
+/* Motion (Slice 10): the skeleton shimmer is the one pre-existing animation and
+ * it ignored the OS setting; every transition added above is neutralised here
+ * too. The universal rule is deliberate — the motion block names ~25 product
+ * hooks, and repeating that list would be a second source of truth that drifts
+ * the moment a hook is renamed. `!important` is what lets a 0,0,0 selector
+ * outrank them. With no transition there is no before-change style, so the
+ * `@starting-style` values above are ignored as well and each element paints
+ * straight at its final state. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton .sk-row,
+  .skeleton .sk-cell {
+    animation: none;
+  }
+  *,
+  ::before,
+  ::after {
+    transition: none !important;
+  }
+}

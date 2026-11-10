@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Mobile browser chrome (review 2026-09-22). The only literal colour in the
+         frontend: HTML metadata cannot consume a CSS custom property. This value
+         serialises the existing --cb-surface token (#ffffff, index.css) and
+         establishes no new colour — if --cb-surface changes, change this too. -->
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <title>Chronobeam</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

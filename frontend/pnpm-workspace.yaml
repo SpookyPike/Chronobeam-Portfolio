@@ -1,0 +1,14 @@
+# pnpm supply-chain policy (pnpm 11).
+#
+# @swc/core ships its native binding as a platform-specific optional dependency
+# (@swc/core-linux-x64-gnu etc.), so its `postinstall` is not needed to load the
+# module — verified by requiring @swc/core directly. Denying the build script
+# keeps installs free of unreviewed lifecycle code.
+#
+# @swc/core is a devDependency purely so dependency-cruiser can parse .ts/.tsx:
+# dependency-cruiser 18 supports `typescript >=2.0.0 <7.0.0` and this project is
+# on TypeScript 7, whose package no longer ships the compiler API. Without a
+# supported transpiler dependency-cruiser treats .ts/.tsx as unscannable and
+# produces an empty graph (see `depcruise --info`).
+allowBuilds:
+  "@swc/core": false

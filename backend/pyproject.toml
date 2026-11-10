@@ -1,0 +1,81 @@
+[project]
+name = "chronobeam-backend"
+version = "0.3.0"
+description = "Chronobeam — employee work-time service backend"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14,<2",
+    "cryptography>=50,<51",
+    "fastapi>=0.115,<1",
+    "psycopg[binary]>=3.2,<4",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.7,<3",
+    "pyjwt>=2.10,<3",
+    "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.34,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.0,<3",
+    "hypothesis>=6.119,<7",
+    "pyright>=1.1.390,<2",
+    "pytest>=9,<10",
+    "ruff>=0.16,<1",
+    "ty>=0.0.82,<0.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# ---------------------------------------------------------------------------
+# Ruff configuration lives at the REPOSITORY ROOT (`../ruff.toml`).
+#
+# It is deliberately not duplicated here: a second copy would drift from the
+# root one, and files outside backend/ (scripts/, frontend/demo/) would then be
+# formatted by a different rule set than this package. One config, one
+# behaviour, whichever directory ruff is invoked from.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Pyright: the deterministic CLI type-check authority (`just typecheck`, CI).
+# ---------------------------------------------------------------------------
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["app", "tests"]
+# The repository root, so `tests/test_policy_snapshot.py` can import the
+# generator in `scripts/`.
+extraPaths = [".."]
+
+# ---------------------------------------------------------------------------
+# ty: Astral's type checker. Deliberately a SECOND, independent signal and the
+# interactive Python *type* LSP (`just ty`, `ty server`) — Pyright above stays
+# the blocking gate. ty is pre-1.0 and currently reports findings Pyright does
+# not, so it is not wired into `just check`/`just ci`.
+#
+# There is intentionally NO [tool.ty.rules] / [tool.ty.overrides] section.
+# Suppressing ty's current diagnostics with per-rule `ignore` entries would hide
+# real signal and would freeze a pre-1.0 rule set into the repo. The findings
+# are tracked as work items instead.
+#
+# Note when reading ty output: ty resolves `# type: ignore[<code>]` against its
+# OWN rule names. The mypy/Pyright codes already used across tests/ (`index`,
+# `attr-defined`, `misc`, ...) are not ty rules, so ty cannot honour them and
+# re-reports those lines. That is a vocabulary mismatch, not a code defect.
+#
+# No `[tool.ty.src] include` is set on purpose: ty checks the whole project
+# root, so `alembic/` is covered too, where Pyright's scope stops at app/tests.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
