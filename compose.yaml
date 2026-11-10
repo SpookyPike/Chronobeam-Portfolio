@@ -18,7 +18,11 @@ services:
     ports:
       - "127.0.0.1:55432:5432"
     volumes:
-      - chronobeam_pgdata:/var/lib/postgresql/data
+      # PostgreSQL 18 moved PGDATA to /var/lib/postgresql/18/docker and refuses
+      # to start when a volume is mounted at the pre-18 /var/lib/postgresql/data
+      # path, so the volume is mounted at the new root. The volume name carries
+      # the major: a pre-18 volume holds a cluster this image cannot read.
+      - chronobeam_pgdata_v18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chronobeam -d chronobeam"]
       interval: 2s
@@ -26,4 +30,4 @@ services:
       retries: 20
 
 volumes:
-  chronobeam_pgdata:
+  chronobeam_pgdata_v18:
